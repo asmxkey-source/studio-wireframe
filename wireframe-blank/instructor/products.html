@@ -1,0 +1,54 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-09 수강권 관리 (초기 상태)</title>
+<link rel="stylesheet" href="../css/wire.css">
+
+<div class="phone">
+  <div class="topbar">
+    <a class="back" href="more.html">←</a>
+    <div class="title">수강권 관리</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="content">
+    <div class="note">n회권 차감식 — 횟수·유효기간·금액을 정하면 회당 단가가 자동 계산됩니다. 여기 등록한 수강권이 결제 등록 목록에 자동 반영됩니다.</div>
+
+    <div class="ph" style="padding:24px 12px">등록된 수강권이 없습니다<br><span style="font-size:11px">아래에서 첫 수강권을 만들어보세요</span></div>
+
+    <div class="section-title">＋ 수강권 추가</div>
+    <div class="field">
+      <label><span class="req">*</span> 카테고리</label>
+      <div class="seg" style="margin-bottom:0">
+        <a class="on" href="#">그룹</a>
+        <a href="#">개인</a>
+      </div>
+    </div>
+    <div class="field">
+      <label><span class="req">*</span> 사용 범위</label>
+      <div class="seg" style="margin-bottom:4px">
+        <a class="on" href="#">전체 수업 (교차 수강)</a>
+        <a href="#">특정 수업 전용</a>
+      </div>
+    </div>
+    <div class="field">
+      <label>수강권명 (자동 생성 · 수정 가능)</label>
+      <div class="input" style="color:#aaa">예: 그룹 10회권</div>
+    </div>
+    <div class="row">
+      <div class="field"><label><span class="req">*</span> 횟수</label><div class="input" style="color:#aaa">회</div></div>
+      <div class="field"><label><span class="req">*</span> 유효기간</label><div class="input" style="color:#aaa">개월</div></div>
+    </div>
+    <div class="field"><label><span class="req">*</span> 금액</label><div class="input" style="color:#aaa">원</div>
+      <div class="hint">회당 단가는 입력 시 자동 계산됩니다</div>
+    </div>
+    <a class="btn" href="products.html">수강권 등록</a>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" href="home.html"><span class="ico"></span>홈</a>
+    <a class="tab" href="timetable.html"><span class="ico"></span>시간표</a>
+    <a class="tab" href="members.html"><span class="ico"></span>회원</a>
+    <a class="tab" href="tuition.html"><span class="ico"></span>수강료</a>
+    <a class="tab active" href="more.html"><span class="ico"></span>더보기</a>
+  </div>
+</div>

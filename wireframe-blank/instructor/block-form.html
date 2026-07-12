@@ -1,0 +1,88 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-16 예약 불가 설정</title>
+<link rel="stylesheet" href="../css/wire.css">
+
+<div class="phone">
+  <div class="topbar">
+    <a class="back" href="timetable.html">←</a>
+    <div class="title">예약 불가 설정</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="content">
+    <div class="card" style="padding:12px;text-align:center">
+      <div style="font-size:22px">🎤</div>
+      <b>음성으로 등록</b>
+      <div class="note" style="margin:4px 0 0">"7월 20일부터 27일까지 휴가"처럼 말하면 기간이 자동으로 채워집니다 (확인 후 [저장])</div>
+    </div>
+
+    <div class="field">
+      <label><span class="req">*</span> 차단 유형</label>
+      <div class="seg" style="margin-bottom:4px">
+        <a class="on" href="#">기간 차단</a>
+        <a href="#">반복 시간대</a>
+      </div>
+      <div class="hint">기간 차단 = 휴가 등 (수강권 자동 연장 대상) · 반복 시간대 = 매주 고정 개인 일정 (연장 없음)</div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label><span class="req">*</span> 시작일</label>
+        <div class="input">2026.07.20 (월)</div>
+      </div>
+      <div class="field">
+        <label><span class="req">*</span> 종료일</label>
+        <div class="input">2026.07.27 (월)</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>사유 (선택)</label>
+      <div class="input">휴가</div>
+      <div class="hint">☐ 회원에게 사유 표시 (체크 안 하면 "예약 불가"로만 노출)</div>
+    </div>
+
+    <div class="field">
+      <label>수강권 유효기간 자동 연장</label>
+      <span class="switch"></span> <span style="font-size:13px;font-weight:700">ON (기본값)</span>
+      <div class="hint">차단 기간과 겹치는 '사용 중' 수강권의 만료일이 차단 일수(+8일)만큼 자동 연장되고, 만료 알림도 재계산됩니다. 회원 화면에 "휴무로 8일 연장" 이력이 표시됩니다.</div>
+    </div>
+
+    <div class="card" style="border-color:#777">
+      <h3>⚠ 이 기간에 예약 3건이 있습니다</h3>
+      <div class="note" style="margin:0 0 8px">
+        · 7/20 (월) 10:00 필라테스 초급 — 예약 2건 (김민지, 박서연)<br>
+        · 7/22 (수) 14:00 PT 김민지 — 예약 1건
+      </div>
+      <div class="field" style="margin:0">
+        <label>기존 예약 처리 방식</label>
+        <div class="note" style="margin:0">
+          ◉ <b>즉시 일괄 휴강</b> — 예약 자동 취소 + 회원 알림 + 차감 복구 (기본값)<br>
+          ○ <b>안내만 발송, 개별 처리</b> — 회원에게 안내 후 취소는 개별 진행. 남은 예약이 달력 빗금 위 ●로 표시되고, 취소될 때마다 사라짐
+        </div>
+      </div>
+    </div>
+
+    <a class="btn" href="timetable.html">예약 불가 저장</a>
+    <a class="btn ghost" href="timetable.html">취소</a>
+
+    <div class="section-title">등록된 예약 불가 기간</div>
+    <div class="hatch">
+      🚫 7/20 (월) ~ 7/27 (월) · 휴가 · 기간 차단<br>
+      <span style="color:#777">수강권 자동 연장 ON · 겹치는 수강권 4건 +8일</span>
+    </div>
+    <div class="hatch">
+      🚫 매주 수 14:00–16:00 · 반복 시간대<br>
+      <span style="color:#777">연장 없음 (다른 시간대 이용 가능)</span>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" href="home.html"><span class="ico"></span>홈</a>
+    <a class="tab active" href="timetable.html"><span class="ico"></span>시간표</a>
+    <a class="tab" href="members.html"><span class="ico"></span>회원</a>
+    <a class="tab" href="tuition.html"><span class="ico"></span>수강료</a>
+    <a class="tab" href="more.html"><span class="ico"></span>더보기</a>
+  </div>
+</div>

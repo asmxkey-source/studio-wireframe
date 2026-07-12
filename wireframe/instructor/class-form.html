@@ -1,0 +1,106 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-03 수업 등록</title>
+<link rel="stylesheet" href="../css/wire.css">
+
+<div class="phone">
+  <div class="topbar">
+    <a class="back" href="timetable.html">←</a>
+    <div class="title">수업 등록</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="content">
+    <div class="card" style="padding:12px;text-align:center">
+      <div style="font-size:22px">🎤</div>
+      <b>음성으로 등록</b>
+      <div class="note" style="margin:4px 0 0">"다음 주 화요일 저녁 7시 그룹 필라테스 초급 정원 6명"처럼 말하면 아래 항목이 자동으로 채워집니다 (확인 후 [등록])</div>
+    </div>
+
+    <div class="field">
+      <label><span class="req">*</span> 카테고리 (필수 · 첫 선택)</label>
+      <div class="seg" style="margin-bottom:4px">
+        <a class="on" href="#">그룹</a>
+        <a href="#">개인</a>
+      </div>
+      <div class="hint">'개인' 선택 시 정원이 1명으로 자동 고정됩니다</div>
+    </div>
+
+    <div class="field">
+      <label><span class="req">*</span> 수업명</label>
+      <div class="input">필라테스 초급</div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label><span class="req">*</span> 정원</label>
+        <div class="input">6명</div>
+        <div class="hint">개인 선택 시 → <span style="text-decoration:line-through">6명</span> 1명 고정</div>
+      </div>
+      <div class="field">
+        <label>장소</label>
+        <div class="input">스튜디오 A</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label><span class="req">*</span> 날짜</label>
+        <div class="input">2026.07.13 (월)</div>
+      </div>
+      <div class="field">
+        <label><span class="req">*</span> 시간</label>
+        <div class="input">10:00–10:50</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>반복 설정</label>
+      <div class="seg" style="margin-bottom:6px">
+        <a href="#">반복 안 함</a>
+        <a class="on" href="#">매주 반복</a>
+      </div>
+      <div class="row" style="gap:4px;margin-bottom:6px">
+        <span class="tag dark" style="text-align:center;padding:6px 0">월</span>
+        <span class="tag" style="text-align:center;padding:6px 0">화</span>
+        <span class="tag dark" style="text-align:center;padding:6px 0">수</span>
+        <span class="tag" style="text-align:center;padding:6px 0">목</span>
+        <span class="tag dark" style="text-align:center;padding:6px 0">금</span>
+        <span class="tag" style="text-align:center;padding:6px 0">토</span>
+        <span class="tag" style="text-align:center;padding:6px 0">일</span>
+      </div>
+      <div class="input">종료: 계속 반복 ▾</div>
+      <div class="card" style="margin-top:6px;padding:10px">
+        <div class="note" style="margin:0">
+          <b>▾ 누르면 선택:</b><br>
+          ◉ 계속 반복 — 종료 없음, 폐강·수정 전까지 매주 자동 생성 (기본값)<br>
+          ○ 종료일 지정 — 탭하면 캘린더 팝업 → 날짜 선택, 그날까지만 생성<br>
+          ○ 횟수 지정 — 탭하면 숫자 입력 → 종료일 자동 계산 표시<br>
+          &nbsp;&nbsp;&nbsp;예: 월·수 반복 + 10회 입력 → "마지막 회차 8/24 (월)" 미리보기 후 저장<br>
+          &nbsp;&nbsp;&nbsp;(예약 불가 기간 7/20~27의 회차 3개는 건너뛰고 뒤로 밀려 10회를 채움)
+        </div>
+      </div>
+      <div class="hint">요일을 눌러 다중 선택 (현재: 월·수·금). 예약 불가 기간에는 반복 회차가 생성되지 않습니다</div>
+    </div>
+
+    <div class="card" style="padding:10px">
+      <div class="note" style="margin:0">
+        <b>기존 반복 수업 수정 시 — 적용 범위 선택:</b><br>
+        ○ 이 회차만 &nbsp; ◉ 이후 회차부터 (기본) &nbsp; ○ 전체<br>
+        요일 변경 시 남은 회차 수 유지·재배치, 예약은 새 일정으로 자동 이전 + 회원 알림.
+        새 일정이 안 맞는 회원은 차감 없이 취소 가능. 저장 전 일정 충돌 검사.
+      </div>
+    </div>
+
+    <a class="btn" href="timetable.html">등록</a>
+    <a class="btn ghost" href="timetable.html">취소</a>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" href="home.html"><span class="ico"></span>홈</a>
+    <a class="tab active" href="timetable.html"><span class="ico"></span>시간표</a>
+    <a class="tab" href="members.html"><span class="ico"></span>회원</a>
+    <a class="tab" href="tuition.html"><span class="ico"></span>수강료</a>
+    <a class="tab" href="more.html"><span class="ico"></span>더보기</a>
+  </div>
+</div>

@@ -1,0 +1,74 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-02 시간표 (주간)</title>
+<link rel="stylesheet" href="../css/wire.css">
+
+<div class="phone">
+  <div class="topbar">
+    <a class="back" href="../index.html">←</a>
+    <div class="title">시간표</div>
+    <div class="spacer" style="width:auto"><a href="block-form.html">예약 불가</a></div>
+  </div>
+
+  <div class="content">
+    <div class="seg">
+      <a class="on" href="timetable.html">주간</a>
+      <a href="timetable-month.html">월간</a>
+    </div>
+    <div class="note" style="margin-top:-6px">※ 주간/월간 선택은 마지막 상태로 저장됨 (다시 열어도 유지)</div>
+
+    <!-- 주간 날짜 스트립: 오늘(7/10 금) 강조 -->
+    <div class="week">
+      <a class="day" href="#">월<span class="num">6</span></a>
+      <a class="day" href="#">화<span class="num">7</span></a>
+      <a class="day" href="#">수<span class="num">8</span></a>
+      <a class="day" href="#">목<span class="num">9</span></a>
+      <a class="day today" href="#">금<span class="num">10</span></a>
+      <a class="day" href="#">토<span class="num">11</span></a>
+      <a class="day" href="#">일<span class="num">12</span></a>
+    </div>
+
+    <div class="section-title">7/10 (금) · 오늘</div>
+    <a class="classblock" href="class-detail.html">
+      <span class="t">10:00–10:50</span> <span class="tag dark">그룹</span>
+      <div class="n">필라테스 초급</div>
+      <div class="meta">예약 3/6 · 스튜디오 A</div>
+    </a>
+    <a class="classblock personal" href="class-detail.html">
+      <span class="t">14:00–14:50</span> <span class="tag">개인</span>
+      <div class="n">PT — 김민지</div>
+      <div class="meta">예약 1/1 · 마감</div>
+    </a>
+    <a class="classblock" href="class-detail.html">
+      <span class="t">19:00–19:50</span> <span class="tag dark">그룹</span>
+      <div class="n">저녁 클래스 중급</div>
+      <div class="meta">예약 5/6 · 잔여 1</div>
+    </a>
+
+    <div class="section-title">7/11 (토)</div>
+    <a class="classblock" href="class-detail.html">
+      <span class="t">11:00–11:50</span> <span class="tag dark">그룹</span>
+      <div class="n">주말 클래스</div>
+      <div class="meta">예약 2/6 · 스튜디오 A</div>
+    </a>
+
+    <div class="section-title">7/12 (일)</div>
+    <div class="ph" style="padding:14px">등록된 수업 없음</div>
+
+    <a class="btn" href="class-form.html">＋ 수업 등록</a>
+
+    <div class="section-title">다가오는 예약 불가 기간</div>
+    <a class="hatch" style="display:block;text-decoration:none" href="block-form.html">
+      🚫 7/20 (월) ~ 7/27 (월) · 휴가 — 예약 불가<br>
+      <span style="color:#777">겹치는 수강권 유효기간 자동 +8일 연장 · 남은 예약 3건</span>
+    </a>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" href="home.html"><span class="ico"></span>홈</a>
+    <a class="tab active" href="timetable.html"><span class="ico"></span>시간표</a>
+    <a class="tab" href="members.html"><span class="ico"></span>회원</a>
+    <a class="tab" href="tuition.html"><span class="ico"></span>수강료</a>
+    <a class="tab" href="more.html"><span class="ico"></span>더보기</a>
+  </div>
+</div>

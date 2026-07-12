@@ -1,0 +1,56 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-08 회원 간편 등록</title>
+<link rel="stylesheet" href="../css/wire.css">
+
+<div class="phone">
+  <div class="topbar">
+    <a class="back" href="members.html">←</a>
+    <div class="title">회원 간편 등록</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="content">
+    <div class="card" style="padding:12px;text-align:center">
+      <div style="font-size:22px">🎤</div>
+      <b>음성으로 등록</b>
+      <div class="note" style="margin:4px 0 0">"홍길동 010-1234-5678"처럼 말하면 자동으로 채워집니다 (확인 후 [등록])</div>
+    </div>
+
+    <div class="note">강사는 <b>이름·휴대폰만</b> 입력합니다 (10초 등록). 생년월일·주소 등 개인정보는 회원이 본인 가입 시 직접 입력합니다.</div>
+
+    <div class="field">
+      <label><span class="req">*</span> 이름</label>
+      <div class="input">이하늘</div>
+    </div>
+    <div class="field">
+      <label><span class="req">*</span> 휴대폰 번호</label>
+      <div class="input">010-1234-5678</div>
+    </div>
+
+    <div class="field">
+      <label>초대 문자 발송</label>
+      <span class="switch"></span> <span style="font-size:13px;font-weight:700">보냄 (기본값)</span>
+      <div class="hint">끄면 회원에게 아무 문자도 안 나가고, 강사만 관리(장부)용으로 사용합니다</div>
+    </div>
+
+    <div class="card" style="padding:10px">
+      <div class="note" style="margin:0">
+        <b>공통 — 저장하면:</b> 회원 목록에 추가, 출석 체크·예약 대리 등록 즉시 가능<br><br>
+        <b>초대 ON:</b> 회원 휴대폰으로 가입 초대 링크 문자 발송 → 회원 본인 가입 시(개인정보 입력 + 동의) 정보 자동 연결. 회원이 앱으로 예약·알림 수신 가능<br>
+        <b>초대 OFF:</b> 문자 안 나감. '오프라인 회원'으로 강사가 대신 관리(예약·출석·수강권 모두 강사가 처리). 나중에 회원 상세에서 언제든 [초대 발송] 가능
+      </div>
+    </div>
+
+    <a class="btn" href="members.html">등록</a>
+    <a class="btn ghost" href="members.html">취소</a>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" href="home.html"><span class="ico"></span>홈</a>
+    <a class="tab" href="timetable.html"><span class="ico"></span>시간표</a>
+    <a class="tab active" href="members.html"><span class="ico"></span>회원</a>
+    <a class="tab" href="tuition.html"><span class="ico"></span>수강료</a>
+    <a class="tab" href="more.html"><span class="ico"></span>더보기</a>
+  </div>
+</div>

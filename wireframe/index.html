@@ -1,0 +1,56 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MVP 와이어프레임 허브</title>
+<link rel="stylesheet" href="css/wire.css">
+
+<div class="hub">
+  <h1>프리랜서 강사 스튜디오 관리 앱 — MVP 와이어프레임 (예시 데이터 버전)</h1>
+  <p class="desc">PRD v0.5 · P0 범위 · 회색조 와이어프레임 (기능 없음, 화면 구조·동선 검증용) · 샘플 데이터 채워짐<br>
+    🆕 아무것도 없는 초기 상태로 테스트 → <a href="../wireframe-blank/index.html">/wireframe-blank/index.html</a></p>
+
+  <h2>강사용 (관리자)</h2>
+  <table>
+    <tr><th>ID</th><th>화면</th><th>목적</th><th>제작</th></tr>
+    <tr><td>I-00</td><td><a href="instructor/shell.html">공통 레이아웃 (뼈대)</a></td><td>상단바 + 콘텐츠 + 하단 탭 5개 구조 확인</td><td class="step">✅ 1단계</td></tr>
+    <tr><td>I-01</td><td><a href="instructor/home.html">홈 (대시보드)</a></td><td>오늘 수업 · 미납/만료 예정 카드 · 🔔알림함 · 🎤수업 등록</td><td class="step">✅ 5단계</td></tr>
+    <tr><td>I-02</td><td><a href="instructor/timetable.html">시간표 (주간)</a> · <a href="instructor/timetable-month.html">월간</a></td><td>그룹·개인 수업 통합 캘린더, 오늘 강조, 블록 빗금</td><td class="step">✅ 2단계</td></tr>
+    <tr><td>I-03</td><td><a href="instructor/class-form.html">수업 등록/수정</a></td><td>🎤음성 입력, 카테고리(그룹/개인), 반복 설정</td><td class="step">✅ 2단계</td></tr>
+    <tr><td>I-04</td><td><a href="instructor/class-detail.html">수업 상세</a></td><td>예약자 명단, 정원, 출석 진입, 휴강/폐강/삭제</td><td class="step">✅ 2단계</td></tr>
+    <tr><td>I-05</td><td><a href="instructor/attendance.html">출석 체크</a></td><td>출석/결석/노쇼, '결제 전' 뱃지, 체험 태그</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-06</td><td><a href="instructor/members.html">회원 목록</a></td><td>상태 필터(활성/만료 예정/만료/휴면), 검색, 행 인라인 요약</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-07</td><td><a href="instructor/member-detail.html">회원 상세</a></td><td>수강권·출석·결제 이력 통합 조회, 결제 등록 진입</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-08</td><td><a href="instructor/member-form.html">회원 간편 등록</a></td><td>이름·휴대폰만 입력 → 가입 초대 링크 자동 발송 (개인정보는 회원 본인 입력)</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-09</td><td><a href="instructor/products.html">수강권 관리</a></td><td>n회권 상품 목록·추가 (회당 단가 자동)</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-10</td><td><a href="instructor/payment-1.html">결제 등록 (3화면 플로우)</a></td><td>회원·상품 → 수단·개시 방식 → 자동 소급 차감 결과</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-11</td><td><a href="instructor/tuition.html">수강료 현황</a></td><td>[탭4 '수강료'] 납부/미납 전환, 미납 회원 목록</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-12</td><td><a href="instructor/refund.html">환불 처리</a></td><td>소비자분쟁해결기준 자동 계산</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-13</td><td><a href="instructor/more.html">더보기 (설정)</a></td><td>상품 관리·예약 불가·취소 정책·스튜디오 정보</td><td class="step">✅ 3단계</td></tr>
+    <tr><td>I-14</td><td><a href="instructor/notif-demo.html">알림 데모</a></td><td>회원 폰의 푸시·SMS 폴백 문구 미리보기 (더보기에서 진입)</td><td class="step">✅ 5단계</td></tr>
+    <tr><td>I-15</td><td><a href="instructor/alerts.html">알림함 (강사)</a></td><td>회원 예약·취소 실시간 알림 — 홈 🔔로 진입</td><td class="step">✅ 5단계</td></tr>
+    <tr><td>I-16</td><td><a href="instructor/block-form.html">예약 불가 설정</a></td><td>개인 일정 기간·시간대 차단, 수강권 자동 연장, 기존 예약 처리 선택 — 시간표에서 진입</td><td class="step">✅ 2단계</td></tr>
+  </table>
+
+  <h2>회원용</h2>
+  <table>
+    <tr><th>ID</th><th>화면</th><th>목적</th><th>제작</th></tr>
+    <tr><td>M-00</td><td><a href="member/shell.html">공통 레이아웃 (뼈대)</a></td><td>상단바 + 콘텐츠 + 하단 탭 5개 구조 확인</td><td class="step">✅ 1단계</td></tr>
+    <tr><td>M-01</td><td><a href="member/signup.html">회원 가입</a></td><td>4개 필수 항목 + 동의 + 푸시 켜기 유도</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-02</td><td><a href="member/login.html">로그인</a></td><td>휴대폰 번호 인증 (비밀번호 없음)</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-03</td><td><a href="member/reserve.html">수업 예약 (주간)</a> · <a href="member/reserve-month.html">월간</a></td><td>[탭1·기본 랜딩] 주간/월간 토글(강사와 동일), 마감·지난=흐림, 내 예약=굵은 테두리, 예약 3/6·잔여 표시</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-04</td><td><a href="member/class-reserve.html">수업 상세·예약</a></td><td>사용 수강권 선택 후 예약, 취소 정책 안내</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-05</td><td><a href="member/my-reservations.html">내 예약 (취소)</a></td><td>다가올 예약, 취소 정책 — '취소 후 재예약'으로 변경</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-06</td><td><a href="member/pass.html">수강권</a></td><td>[탭2] 잔여 횟수 프로그레스, 개시 대기 표시</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-07</td><td class="todo">요금 안내 (보류)</td><td>회원 진입 버튼 제거 — 재등록은 강사와 상담. 화면(pricing.html)은 보존, 미연결</td><td class="step todo">—</td></tr>
+    <tr><td>M-08</td><td><a href="member/usage.html">이용내역</a></td><td>[탭3] 출석·차감·결제 기록 — 수업명·차감 회차 표시</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-09</td><td><a href="member/alerts.html">알림함</a></td><td>[탭4] 잔여·납부·수업변경·예약 알림 (실제 문구)</td><td class="step">✅ 4단계</td></tr>
+    <tr><td>M-10</td><td><a href="member/profile.html">내 정보</a></td><td>[탭5] 본인 정보 수정, 알림 설정</td><td class="step">✅ 4단계</td></tr>
+  </table>
+
+  <p class="note" style="margin-top:24px">※ 공지 등록(강사)은 P1이라 MVP 범위에서 제외. 회원 '알림함'은 P0 알림(만료·납부·예약)의 수신함으로 유지.</p>
+
+  <h2>지인 테스트</h2>
+  <table>
+    <tr><th>화면</th><th>목적</th><th>제작</th></tr>
+    <tr><td><a href="feedback.html">피드백 양식</a></td><td>핵심 가치·기능별·지불 의향 체크리스트</td><td class="step">✅ 5단계</td></tr>
+  </table>
+</div>

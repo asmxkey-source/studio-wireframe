@@ -1,0 +1,174 @@
+/* 와이어프레임 공통 스타일 — 회색조, 실제 디자인 아님 */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: "Malgun Gothic", system-ui, -apple-system, sans-serif;
+  background: #e8e8e8;
+  color: #222;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── 모바일 프레임 (375px 기준, 데스크톱에선 가운데 정렬) ── */
+.phone {
+  width: 100%;
+  max-width: 375px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 0 1px #aaa;
+}
+@media (min-width: 480px) {
+  .phone { min-height: 812px; margin: 24px auto; box-shadow: 0 0 0 1px #999, 0 8px 24px rgba(0,0,0,.15); }
+}
+
+/* ── 상단바 ── */
+.topbar {
+  display: flex; align-items: center;
+  height: 48px; padding: 0 12px;
+  border-bottom: 1px solid #ccc;
+  background: #f5f5f5;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar .back { width: 32px; font-size: 18px; text-decoration: none; color: #444; }
+.topbar .title { flex: 1; text-align: center; font-weight: 700; font-size: 15px; }
+.topbar .spacer { width: 32px; text-align: right; font-size: 12px; }
+.topbar .spacer a { color: #444; }
+
+/* ── 콘텐츠 ── */
+.content { flex: 1; padding: 16px; padding-bottom: 24px; }
+
+/* ── 하단 탭 ── */
+.tabbar {
+  display: flex;
+  border-top: 1px solid #ccc;
+  background: #f5f5f5;
+  position: sticky; bottom: 0; z-index: 10;
+}
+.tab {
+  flex: 1; text-align: center; padding: 8px 0 10px;
+  font-size: 11px; color: #555; text-decoration: none;
+}
+.tab .ico {
+  display: block; width: 22px; height: 22px;
+  border: 1px solid #999; border-radius: 6px;
+  margin: 0 auto 3px; background: #fff;
+}
+.tab.active { color: #111; font-weight: 700; }
+.tab.active .ico { background: #bbb; }
+
+/* ── 공통 컴포넌트 ── */
+.card {
+  border: 1px solid #bbb; border-radius: 8px;
+  padding: 12px; margin-bottom: 12px; background: #fafafa;
+}
+.card h3 { font-size: 13px; margin-bottom: 6px; }
+.btn {
+  display: block; text-align: center;
+  border: 1px solid #666; border-radius: 8px;
+  padding: 12px; background: #ddd;
+  font-weight: 700; font-size: 14px;
+  color: #111; text-decoration: none; cursor: pointer;
+  width: 100%;
+}
+.btn.ghost { background: #fff; border-color: #999; font-weight: 400; }
+.btn + .btn { margin-top: 8px; }
+.row { display: flex; gap: 8px; }
+.row > * { flex: 1; }
+
+.tag {
+  display: inline-block; font-size: 11px;
+  border: 1px solid #888; border-radius: 10px;
+  padding: 1px 8px; background: #eee; color: #333;
+}
+.tag.dark { background: #666; color: #fff; border-color: #666; }
+
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  border-radius: 4px; padding: 2px 6px;
+  background: #ccc; color: #222;
+}
+
+.ph { /* 자리표시자 */
+  border: 2px dashed #bbb; border-radius: 8px;
+  padding: 24px 12px; text-align: center;
+  color: #888; font-size: 12px; background: #fcfcfc;
+  margin-bottom: 12px;
+}
+
+.list-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 4px; border-bottom: 1px solid #ddd;
+  text-decoration: none; color: #222;
+}
+.list-item .thumb { width: 36px; height: 36px; border: 1px solid #999; border-radius: 50%; background: #eee; flex-shrink: 0; }
+.list-item .grow { flex: 1; }
+.list-item .sub { font-size: 12px; color: #777; }
+.list-item .arrow { color: #999; }
+
+.note { font-size: 12px; color: #777; margin: 8px 0 16px; }
+.section-title { font-size: 13px; font-weight: 700; color: #555; margin: 20px 0 8px; }
+
+/* ── 세그먼트 컨트롤 (주간/월간 등) ── */
+.seg { display: flex; border: 1px solid #888; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+.seg a { flex: 1; text-align: center; padding: 8px; text-decoration: none; color: #444; font-size: 13px; background: #fff; }
+.seg a.on { background: #666; color: #fff; font-weight: 700; }
+
+/* ── 주간 날짜 스트립 ── */
+.week { display: flex; gap: 4px; margin-bottom: 12px; }
+.day { flex: 1; text-align: center; font-size: 11px; color: #666; padding: 6px 0; border: 1px solid #ddd; border-radius: 8px; text-decoration: none; background: #fff; }
+.day .num { display: block; font-size: 14px; margin-top: 2px; color: #333; }
+.day.today { border: 2px solid #333; background: #eee; }
+.day.today .num { font-weight: 800; }
+
+/* ── 수업 블록 ── */
+.classblock { display: block; border: 1px solid #999; border-left: 5px solid #555; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; text-decoration: none; color: #222; background: #fff; }
+.classblock .t { font-size: 12px; color: #666; }
+.classblock .n { font-weight: 700; font-size: 13px; }
+.classblock .meta { font-size: 12px; color: #555; margin-top: 2px; }
+.classblock.personal { border-left: 5px double #555; background: #f4f4f4; }
+.classblock.dim { opacity: .45; }
+.classblock.mine { border: 2px solid #333; }
+.classblock .mineTag { font-size:11px; font-weight:700; }
+
+/* ── 예약 블록(차단) 빗금 ── */
+.hatch { background: repeating-linear-gradient(45deg, #eee, #eee 6px, #ddd 6px, #ddd 12px); border: 1px dashed #999; border-radius: 6px; padding: 10px; font-size: 12px; color: #444; margin-bottom: 8px; }
+
+/* ── 폼 ── */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; font-weight: 700; }
+.field label .req { color: #333; font-weight: 800; }
+.input { border: 1px solid #aaa; border-radius: 6px; padding: 10px; background: #fff; font-size: 13px; color: #333; width: 100%; }
+.input.fixed { background: #e8e8e8; color: #777; }
+.hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+/* ── 토글 스위치 표현 ── */
+.switch { display: inline-block; width: 36px; height: 20px; border-radius: 10px; background: #555; position: relative; vertical-align: middle; }
+.switch::after { content: ''; position: absolute; right: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.switch.off { background: #ccc; }
+.switch.off::after { right: auto; left: 2px; }
+
+/* ── 월간 캘린더 ── */
+.cal { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 12px; }
+.cal th { font-size: 11px; color: #777; padding: 4px 0; font-weight: 400; }
+.cal td { border: 1px solid #e2e2e2; height: 46px; vertical-align: top; font-size: 11px; padding: 3px 4px; color: #444; }
+.cal td.dim { color: #ccc; }
+.cal td.today { border: 2px solid #222; font-weight: 800; background: #f0f0f0; }
+.cal td.blocked { background: repeating-linear-gradient(45deg, #f2f2f2, #f2f2f2 5px, #e0e0e0 5px, #e0e0e0 10px); }
+.dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #777; margin: 1px 1px 0 0; }
+
+.btn.disabled { opacity: .35; pointer-events: none; }
+
+/* ── 허브(index) 전용 ── */
+.hub { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+.hub h1 { font-size: 20px; margin-bottom: 4px; }
+.hub .desc { color: #666; font-size: 13px; margin-bottom: 24px; }
+.hub h2 { font-size: 15px; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #999; }
+.hub table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
+.hub th, .hub td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
+.hub th { background: #eee; font-size: 12px; }
+.hub a { color: #222; }
+.hub .todo { color: #aaa; }
+.hub .step { white-space: nowrap; }

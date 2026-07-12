@@ -1,0 +1,56 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-10 결제 등록 ②</title>
+<link rel="stylesheet" href="../css/wire.css">
+
+<div class="phone">
+  <div class="topbar">
+    <a class="back" href="payment-1.html">←</a>
+    <div class="title">결제 등록 (2/3)</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="content">
+    <div class="field">
+      <label><span class="req">*</span> 결제 수단</label>
+      <div class="seg" style="margin-bottom:4px">
+        <a href="#">현금</a>
+        <a class="on" href="#">계좌이체</a>
+        <a href="#">카드단말기</a>
+        <a href="#">미납</a>
+      </div>
+      <div class="hint">'미납(나중에 받기)' 선택 시 → 회원에게 납부 안내(푸시+SMS 폴백) 발송 + 미납 상태로 관리. 나중에 실제 결제받으면 수단을 바꿔 납부 완료 처리</div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label><span class="req">*</span> 금액</label>
+        <div class="input">440,000원</div>
+      </div>
+      <div class="field">
+        <label><span class="req">*</span> 결제일 / 납부 기한</label>
+        <div class="input">2026.07.10</div>
+        <div class="hint">미납이면 '납부 기한'으로 표시</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label><span class="req">*</span> 수강권 개시 방식</label>
+      <div class="card" style="margin-bottom:6px">○ 즉시 개시 — 결제일부터 카운트</div>
+      <div class="card" style="margin-bottom:6px">○ 지정일 개시 — 캘린더에서 시작일 선택</div>
+      <div class="card" style="margin-bottom:6px;border:2px solid #333">◉ <b>첫 출석 시 자동 개시</b> (기본값)</div>
+      <div class="hint">이하늘님은 7/10 출석(차감 대기)이 이미 있어 저장 즉시 자동 소급 차감·개시됩니다</div>
+    </div>
+
+    <a class="btn" href="payment-3.html">결제 등록</a>
+    <a class="btn ghost" href="payment-1.html">이전</a>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" href="home.html"><span class="ico"></span>홈</a>
+    <a class="tab" href="timetable.html"><span class="ico"></span>시간표</a>
+    <a class="tab" href="members.html"><span class="ico"></span>회원</a>
+    <a class="tab active" href="tuition.html"><span class="ico"></span>수강료</a>
+    <a class="tab" href="more.html"><span class="ico"></span>더보기</a>
+  </div>
+</div>

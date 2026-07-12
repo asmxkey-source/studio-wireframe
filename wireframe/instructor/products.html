@@ -1,0 +1,76 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I-09 수강권 관리</title>
+<link rel="stylesheet" href="../css/wire.css">
+
+<div class="phone">
+  <div class="topbar">
+    <a class="back" href="more.html">←</a>
+    <div class="title">수강권 관리</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="content">
+    <div class="note">n회권 차감식 — 횟수·유효기간·금액을 정하면 회당 단가가 자동 계산되어 회원 요금 안내에 노출됩니다. 그룹/개인 구분 등록 가능. <b>여기 등록된 상품이 결제 등록 화면의 선택 목록에 자동 반영됩니다.</b></div>
+
+    <div class="card">
+      <span class="tag dark">그룹</span> <b>1회 체험/단건</b> <span style="float:right" class="sub"><a href="#">수정</a> · <a href="#">삭제</a></span>
+      <div class="note" style="margin:0">55,000원 · 유효 1개월 · 회당 55,000원<br>사용 범위: <b>전체 수업 (교차 수강)</b></div>
+    </div>
+    <div class="card">
+      <span class="tag dark">그룹</span> <b>4회권</b> <span style="float:right" class="sub"><a href="#">수정</a> · <a href="#">삭제</a></span>
+      <div class="note" style="margin:0">198,000원 · 유효 2개월 · <b>회당 49,500원</b> (자동 계산)<br>사용 범위: <b>전체 수업 (교차 수강)</b></div>
+    </div>
+    <div class="card">
+      <span class="tag dark">그룹</span> <b>10회권</b> <span style="float:right" class="sub"><a href="#">수정</a> · <a href="#">삭제</a></span>
+      <div class="note" style="margin:0">440,000원 · 유효 5개월 · <b>회당 44,000원</b> (자동 계산)<br>사용 범위: <b>전체 수업 (교차 수강)</b></div>
+    </div>
+    <div class="card">
+      <span class="tag dark">그룹</span> <b>필라테스 초급 10회권</b> <span style="float:right" class="sub"><a href="#">수정</a> · <a href="#">삭제</a></span>
+      <div class="note" style="margin:0">400,000원 · 유효 5개월 · <b>회당 40,000원</b> (자동 계산)<br>사용 범위: <b>특정 수업 — 필라테스 초급 전용</b></div>
+    </div>
+    <div class="card">
+      <span class="tag">개인</span> <b>PT 10회권</b> <span style="float:right" class="sub"><a href="#">수정</a> · <a href="#">삭제</a></span>
+      <div class="note" style="margin:0">700,000원 · 유효 3개월 · <b>회당 70,000원</b> (자동 계산)<br>사용 범위: <b>특정 수업 — PT 전용</b></div>
+    </div>
+    <div class="note">※ 판매 이력이 있는 상품은 삭제 시 '판매 중지'로 전환 (기존 구매 회원의 수강권은 유지)</div>
+
+    <div class="section-title">＋ 수강권 추가</div>
+    <div class="field">
+      <label><span class="req">*</span> 카테고리</label>
+      <div class="seg" style="margin-bottom:0">
+        <a class="on" href="#">그룹</a>
+        <a href="#">개인</a>
+      </div>
+    </div>
+    <div class="field">
+      <label><span class="req">*</span> 사용 범위</label>
+      <div class="seg" style="margin-bottom:4px">
+        <a class="on" href="#">전체 수업 (교차 수강)</a>
+        <a href="#">특정 수업 전용</a>
+      </div>
+      <div class="hint">'특정 수업 전용' 선택 시 → 등록된 수업 중 선택 (복수 선택 가능. 예: 필라테스 초급)</div>
+    </div>
+    <div class="field">
+      <label>수강권명 (자동 생성 · 수정 가능)</label>
+      <div class="input">그룹 10회권</div>
+      <div class="hint">특정 수업 전용이면 "필라테스 초급 10회권"으로 자동 생성</div>
+    </div>
+    <div class="row">
+      <div class="field"><label><span class="req">*</span> 횟수</label><div class="input">10회</div></div>
+      <div class="field"><label><span class="req">*</span> 유효기간</label><div class="input">5개월</div></div>
+    </div>
+    <div class="field"><label><span class="req">*</span> 금액</label><div class="input">440,000원</div>
+      <div class="hint">회당 단가 자동: 44,000원</div>
+    </div>
+    <a class="btn" href="products.html">수강권 등록</a>
+  </div>
+
+  <div class="tabbar">
+    <a class="tab" href="home.html"><span class="ico"></span>홈</a>
+    <a class="tab" href="timetable.html"><span class="ico"></span>시간표</a>
+    <a class="tab" href="members.html"><span class="ico"></span>회원</a>
+    <a class="tab" href="tuition.html"><span class="ico"></span>수강료</a>
+    <a class="tab active" href="more.html"><span class="ico"></span>더보기</a>
+  </div>
+</div>
