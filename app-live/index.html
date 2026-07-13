@@ -202,24 +202,33 @@ function vMemberDetail(id){ const m=DB.members.find(x=>x.id===id); if(!m) return
   <div class="section-title">출석 이력</div>${atts.length?atts.slice().reverse().map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${esc(c.name||'수업')}(${dateLabel(c.date||a.date)}, ${c.time||''})<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험':a.deducted?' · 1회 차감':''}</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}
   <div class="section-title">결제 이력</div>${pays.length?pays.slice().reverse().map(p=>`<div class="list-item"><span class="grow">${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.status==='unpaid'?'미납 · 기한 '+md(p.date):p.method+' ('+md(p.date)+')'}</span></span></div>`).join(''):'<div class="empty">없음</div>'}
   </div>`+tabbar('members'); }
+function ttNav(label){
+  return `<div style="display:flex;align-items:center;margin:2px 0 8px">
+    <a id="ttPrev" style="padding:4px 12px;color:#444;text-decoration:none;font-size:15px">〈</a>
+    <div style="flex:1;text-align:center;font-weight:700;font-size:14px">${label} <a id="ttToday" style="font-size:11px;color:#888;text-decoration:underline;font-weight:400;margin-left:6px">오늘</a></div>
+    <a id="ttNext" style="padding:4px 12px;color:#444;text-decoration:none;font-size:15px">〉</a>
+  </div>`;
+}
+function ttLabel(){ if(TT.view==='week'){ const ws=weekStart(TT.ref); return md(ws)+' ~ '+md(addDays(ws,6)); } const [y,mo]=monthKey(TT.ref).split('-'); return `${y}년 ${+mo}월`; }
+function ttStrip(){
+  const ws=weekStart(TT.ref); const days=[]; for(let i=0;i<7;i++) days.push(addDays(ws,i));
+  return `<div class="week">${days.map(dt=>`<a class="day ${dt===todayStr?'today':''}">${WD[dow(dt)]}<span class="num">${+dt.slice(8)}</span></a>`).join('')}</div>`;
+}
+function ttWeekBody(blockFn,blockLabel){
+  const ws=weekStart(TT.ref); const days=[]; for(let i=0;i<7;i++) days.push(addDays(ws,i));
+  let html=ttStrip();
+  (DB.blocks||[]).filter(b=>b.end>=days[0]&&b.start<=days[6]).forEach(b=>{ html+=`<div class="hatch">🚫 ${dateLabel(b.start)} ~ ${dateLabel(b.end)} ${blockLabel}${b.reason?' · '+esc(b.reason):''}</div>`; });
+  const withCls=days.filter(dt=>DB.classes.some(c=>c.date===dt));
+  if(!withCls.length) return html+'<div class="empty">이번 주 등록된 수업이 없습니다</div>';
+  withCls.forEach(dt=>{ const cls=DB.classes.filter(c=>c.date===dt).sort((a,b)=>a.time<b.time?-1:1); html+=`<div class="section-title">${dateLabel(dt)}${dt===todayStr?' · 오늘':''}</div>`+cls.map(blockFn).join(''); });
+  return html;
+}
 function vTimetable(){
   const view=TT.view;
-  const seg=`<div class="seg" id="ttseg"><a class="${view==='week'?'on':''}" data-v="week">주간</a><a class="${view==='month'?'on':''}" data-v="month">월간</a></div>`;
-  const nav=`<div class="row" style="gap:6px;margin-bottom:8px"><a class="btn ghost" id="ttPrev" style="flex:0 0 48px">〈</a><a class="btn ghost" id="ttToday">오늘</a><a class="btn ghost" id="ttNext" style="flex:0 0 48px">〉</a><a class="btn ghost" href="#/blockAdd">예약 불가</a></div>`;
-  const body = view==='week'? ttWeek() : ttMonth();
-  return hdr('시간표','#/home')+`<div class="content">${seg}${nav}${body}<a class="btn" href="#/classAdd" style="margin-top:12px">＋ 수업 등록</a></div>`+tabbar('timetable');
-}
-function ttWeek(){
-  const ws=weekStart(TT.ref); const days=[]; for(let i=0;i<7;i++) days.push(addDays(ws,i));
-  let html=`<div class="section-title">${md(days[0])} ~ ${md(days[6])}</div>`;
-  html+=days.map(dt=>{
-    const cls=DB.classes.filter(c=>c.date===dt).sort((a,b)=>a.time<b.time?-1:1);
-    const bl=inBlock(dt);
-    const head=`<div class="section-title" style="font-size:12px;margin:14px 0 6px;color:${dt===todayStr?'#111':'#888'}">${dateLabel(dt)}${dt===todayStr?' · 오늘':''}${bl?' <span class="tag">예약 불가</span>':''}</div>`;
-    const list = cls.length? cls.map(classBlock).join('') : `<div class="hint" style="margin:0">${bl?'휴무':'수업 없음'}</div>`;
-    return head+list;
-  }).join('');
-  return html;
+  const seg=`<div class="seg" id="ttseg"><a class="${view==='week'?'on':''}" data-v="week">주간</a><a class="${view==='month'?'on':''}" data-v="month">월간</a></div>
+  <div class="note" style="margin-top:-4px">※ 주간/월간 선택은 마지막 상태로 저장됨 (다시 열어도 유지)</div>`;
+  const body = view==='week'? ttWeekBody(classBlock,'예약 불가') : ttMonth();
+  return hdr('시간표','#/home')+`<div class="content">${seg}${ttNav(ttLabel())}${body}<a class="btn" href="#/classAdd" style="margin-top:12px">＋ 수업 등록</a><a class="btn ghost" href="#/blockAdd">🚫 예약 불가 설정</a></div>`+tabbar('timetable');
 }
 function ttMonth(){
   const mk=monthKey(TT.ref); const [y,mo]=mk.split('-').map(Number);
@@ -230,7 +239,7 @@ function ttMonth(){
   const grid=`<table class="cal"><tr><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr><tr>${cells}</tr></table>`;
   const selCls=DB.classes.filter(c=>c.date===TT.sel).sort((a,b)=>a.time<b.time?-1:1);
   const sel=`<div class="section-title">${dateLabel(TT.sel)}${inBlock(TT.sel)?' · 예약 불가':''}</div>`+(selCls.length?selCls.map(classBlock).join(''):'<div class="empty">이 날 수업이 없습니다</div>');
-  return `<div class="section-title">${y}년 ${mo}월 · ● 수업</div>${grid}${sel}`;
+  return `${grid}<div class="note" style="margin-top:-4px">● = 수업 있음 · 빗금 = 예약 불가 · 날짜 탭 → 아래에 표시</div>${sel}`;
 }
 function vBlockAdd(){
   return hdr('예약 불가 설정','#/timetable')+`<div class="content">
@@ -308,22 +317,10 @@ function memberSwitcher(m){ return `<div class="note">${esc(m.name)}님 화면 �
 function mClassBlock(c,m){ const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length; const mine=DB.reservations.find(r=>r.classId===c.id&&r.memberId===m.id&&r.status==='booked'); const full=rc>=c.capacity; const href=mine?'':' href="#/m/classdt/'+c.id+'"'; const style=mine?' style="border:2px solid #333"':''; return '<a class="classblock '+(c.category==='personal'?'personal':'')+'"'+href+style+'><span class="t">'+c.time+'</span> <span class="tag '+(c.category==='group'?'dark':'')+'">'+(c.category==='group'?'그룹':'개인')+'</span>'+(mine?' <b>✓ 내 예약</b>':'')+'<div class="n">'+esc(c.name)+'</div><div class="meta">예약 '+rc+'/'+c.capacity+(mine?' · 예약 완료':full?' · 마감':' · 예약 가능')+'</div></a>'; }
 function mReserve(m){
   const view=TT.view;
-  const seg=`<div class="seg" id="ttseg"><a class="${view==='week'?'on':''}" data-v="week">주간</a><a class="${view==='month'?'on':''}" data-v="month">월간</a></div>`;
-  const nav=`<div class="row" style="gap:6px;margin-bottom:8px"><a class="btn ghost" id="ttPrev" style="flex:0 0 48px">〈</a><a class="btn ghost" id="ttToday">오늘</a><a class="btn ghost" id="ttNext" style="flex:0 0 48px">〉</a></div>`;
-  const body=view==='week'?mtWeek(m):mtMonth(m);
-  return hdr('수업 예약')+`<div class="content">${memberSwitcher(m)}${seg}${nav}${body}</div>`+mtab('reserve');
-}
-function mtWeek(m){
-  const ws=weekStart(TT.ref); const days=[]; for(let i=0;i<7;i++) days.push(addDays(ws,i));
-  let html=`<div class="section-title">${md(days[0])} ~ ${md(days[6])}</div>`;
-  html+=days.map(dt=>{
-    const cls=DB.classes.filter(c=>c.date===dt).sort((a,b)=>a.time<b.time?-1:1);
-    const bl=inBlock(dt);
-    const head=`<div class="section-title" style="font-size:12px;margin:14px 0 6px;color:${dt===todayStr?'#111':'#888'}">${dateLabel(dt)}${dt===todayStr?' · 오늘':''}${bl?' <span class="tag">휴무</span>':''}</div>`;
-    const list=cls.length?cls.map(c=>mClassBlock(c,m)).join(''):`<div class="hint" style="margin:0">${bl?'휴무':'수업 없음'}</div>`;
-    return head+list;
-  }).join('');
-  return html;
+  const seg=`<div class="seg" id="ttseg"><a class="${view==='week'?'on':''}" data-v="week">주간</a><a class="${view==='month'?'on':''}" data-v="month">월간</a></div>
+  <div class="note" style="margin-top:-4px">※ 주간/월간 선택은 마지막 상태로 저장됨</div>`;
+  const body=view==='week'?ttWeekBody(c=>mClassBlock(c,m),'휴무'):mtMonth(m);
+  return hdr('수업 예약')+`<div class="content">${memberSwitcher(m)}${seg}${ttNav(ttLabel())}${body}</div>`+mtab('reserve');
 }
 function mtMonth(m){
   const mk=monthKey(TT.ref); const [y,mo]=mk.split('-').map(Number);
@@ -333,7 +330,7 @@ function mtMonth(m){
   const grid=`<table class="cal"><tr><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr><tr>${cells}</tr></table>`;
   const selCls=DB.classes.filter(c=>c.date===TT.sel).sort((a,b)=>a.time<b.time?-1:1);
   const sel=`<div class="section-title">${dateLabel(TT.sel)}${inBlock(TT.sel)?' · 휴무':''}</div>`+(selCls.length?selCls.map(c=>mClassBlock(c,m)).join(''):'<div class="empty">이 날 수업이 없습니다</div>');
-  return `<div class="section-title">${y}년 ${mo}월 · ● 수업</div>${grid}${sel}`;
+  return `${grid}<div class="note" style="margin-top:-4px">● = 수업 있음 · 빗금 = 휴무 · 날짜 탭 → 아래에 표시</div>${sel}`;
 }
 function mClassReserve(m,cid){ const c=DB.classes.find(x=>x.id===cid); if(!c) return mReserve(m); const up=usablePass(m.id,c.category); const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length; const full=rc>=c.capacity; return hdr('수업 상세','#/m/reserve')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}<br>예약 ${rc}/${c.capacity}</div></div><div class="section-title">사용할 수강권</div>${up?`<div class="card" style="border:2px solid #333">◉ <b>${esc(up.name)}</b><div class="note" style="margin:0">잔여 ${up.remaining}회 · 출석 시 1회 차감</div></div>`:'<div class="empty">사용 가능한 수강권이 없습니다. 강사에게 결제를 등록받으세요.</div>'}${full?'<div class="empty">정원 마감</div>':`<a class="btn" data-book="${c.id}">예약하기</a>`}<div class="card" style="padding:10px;margin-top:12px"><div class="note" style="margin:0"><b>취소 정책</b><br>수업 24시간 전까지 취소 시 차감되지 않습니다.</div></div></div>`+mtab('reserve'); }
 function mPass(m){ const ps=memberPasses(m.id); return hdr('수강권')+`<div class="content">${memberSwitcher(m)}${ps.length?ps.map(p=>{const used=p.total-p.remaining;const pct=p.total?Math.round(used/p.total*100):0;return `<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':'만료'}</span>${p.status==='pending'?'<div class="note" style="margin:6px 0 0">개시 전 — 첫 출석부터 시작</div>':`<div class="note" style="margin:6px 0">잔여 <b>${p.remaining}회</b> / 총 ${p.total}회 · ~${md(p.expire)}</div><div class="prog"><div style="width:${100-pct}%"></div></div>`}</div>`;}).join(''):'<div class="empty">보유한 수강권이 없습니다</div>'}</div>`+mtab('pass'); }
