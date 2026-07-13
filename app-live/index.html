@@ -448,14 +448,22 @@ async function doPassEdit(f){
 }
 async function doDelProduct(id){ const p=DB.passes.find(x=>x.id===id); if(!p) return;
   const sold=DB.mpasses.filter(x=>x.passId===id).length;
-  const linked=DB.classes.filter(c=>c.passId===id).length;
+  const linkedCls=DB.classes.filter(c=>c.passId===id);
   let msg=`'${p.name}' 수강권을 삭제할까요?`;
   if(sold) msg+=`\n· 이미 판매된 ${sold}건(회원 보유분)은 그대로 유지됩니다.`;
-  if(linked) msg+=`\n· 이 강의로 등록된 수업 ${linked}개도 그대로 유지됩니다.`;
-  msg+='\n삭제 후에는 새 결제·수업 등록 목록에서만 사라집니다.';
   if(!confirm(msg)) return;
+  let clsMsg='';
+  if(linkedCls.length){
+    const rc=DB.reservations.filter(r=>linkedCls.some(c=>c.id===r.classId)&&r.status==='booked').length;
+    if(confirm(`시간표에 이 강의로 등록된 수업 ${linkedCls.length}개가 있습니다.\n함께 삭제(폐강)할까요? ${rc?`(예약 ${rc}건도 취소됩니다)`:''}\n\n[확인] = 수업도 함께 삭제 · [취소] = 수업은 시간표에 유지`)){
+      const ids=linkedCls.map(c=>c.id);
+      DB.reservations.filter(r=>ids.includes(r.classId)&&r.status==='booked').forEach(r=>r.status='cancelled');
+      DB.classes=DB.classes.filter(c=>!ids.includes(c.id));
+      clsMsg=` · 수업 ${linkedCls.length}개 폐강`;
+    }
+  }
   DB.passes=DB.passes.filter(x=>x.id!==id);
-  await saveDB(); toast('수강권 삭제됨'); render(); }
+  await saveDB(); toast('수강권 삭제됨'+clsMsg); render(); }
 function copy(t){ navigator.clipboard?.writeText(t).then(()=>toast('복사됨 — 카톡에 붙여넣어 전송하세요'),()=>toast(t)); }
 async function handleForm(hash,d){
   if(hash.startsWith('#/passAdd')){ const cat=document.getElementById('cat').dataset.v; const price=+String(d.price).replace(/[^0-9]/g,''); DB.passes.push({id:uid(),category:cat,scope:'all',scopeCat:cat==='group'?'그룹':'개인',name:d.name,count:+d.count,months:+d.months,price}); await saveDB(); toast('수강권 등록'); go('#/passes'); }
