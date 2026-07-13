@@ -75,11 +75,13 @@ let CODE=studioCode();
 const empty=()=>({members:[],passes:[],classes:[],mpasses:[],reservations:[],attendance:[],payments:[],blocks:[]});
 let DB=empty();
 let ready=false;
+// 오늘 날짜 = 기기의 실제 날짜 (하드코딩 금지)
+const _now=new Date();
+const todayStr=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
 // 시간표 뷰 상태
-let TT={ view: localStorage.getItem('ttView')||'week', ref:'2026-07-10', sel:'2026-07-10' };
+let TT={ view: localStorage.getItem('ttView')||'week', ref:todayStr, sel:todayStr };
 
 const won=n=>Number(n||0).toLocaleString('ko-KR');
-const todayStr='2026-07-10';
 function uid(){ return Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); }
 function md(iso){ if(!iso) return ''; const p=iso.split('-'); return p[1].replace(/^0/,'')+'/'+p[2].replace(/^0/,''); }
 // 날짜 계산은 UTC 기준으로 통일 (지역 시간대에 따른 하루 오차 방지)
@@ -87,7 +89,7 @@ function addMonths(iso,m){ const d=new Date(iso+'T00:00:00Z'); d.setUTCMonth(d.g
 function addDays(iso,n){ const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+Number(n)); return d.toISOString().slice(0,10); }
 const WD=['일','월','화','수','목','금','토'];
 function dow(iso){ return new Date(iso+'T00:00:00Z').getUTCDay(); } // 0=일 … 6=토
-function weekStart(iso){ const d=new Date(iso+'T00:00:00Z'); const g=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-g); return d.toISOString().slice(0,10); } // 월요일 시작
+function weekStart(iso){ const d=new Date(iso+'T00:00:00Z'); const g=d.getUTCDay(); d.setUTCDate(d.getUTCDate()-g); return d.toISOString().slice(0,10); } // 일요일 시작
 function monthKey(iso){ return iso.slice(0,7); }
 function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00Z')-new Date(a+'T00:00:00Z'))/86400000); }
 function dateLabel(iso){ return md(iso)+' ('+WD[dow(iso)]+')'; }
@@ -174,7 +176,7 @@ function vHome(){
       <a class="card" href="#/passes" style="display:block;text-decoration:none;color:#222"><b>① 수강권 만들기</b> ${DB.passes.length?'✓':''}</a>
       <a class="card" href="#/members" style="display:block;text-decoration:none;color:#222"><b>② 회원 등록 · 초대</b> ${DB.members.length?'✓':''}</a>
       <a class="card" href="#/timetable" style="display:block;text-decoration:none;color:#222"><b>③ 수업 등록</b> ${DB.classes.length?'✓':''}</a>`:''}
-    <div class="section-title">오늘 수업 <span class="sub" style="font-weight:400">7/10 (금)</span></div>
+    <div class="section-title">오늘 수업 <span class="sub" style="font-weight:400">${dateLabel(todayStr)}</span></div>
     ${todays.length?todays.map(classBlock).join(''):'<div class="empty">오늘 등록된 수업이 없습니다</div>'}
     <a class="btn" href="#/classAdd" style="margin-top:12px">＋ 수업 등록</a>
   </div>`+tabbar('home');
@@ -232,11 +234,11 @@ function vTimetable(){
 }
 function ttMonth(){
   const mk=monthKey(TT.ref); const [y,mo]=mk.split('-').map(Number);
-  const firstDow=(new Date(`${mk}-01T00:00:00Z`).getUTCDay()+6)%7;
+  const firstDow=new Date(`${mk}-01T00:00:00Z`).getUTCDay();
   const dim=new Date(Date.UTC(y,mo,0)).getUTCDate();
   let cells=''; for(let i=0;i<firstDow;i++) cells+='<td class="dim"></td>';
   for(let d=1;d<=dim;d++){ const iso=`${mk}-${String(d).padStart(2,'0')}`; const has=DB.classes.some(c=>c.date===iso); const bl=inBlock(iso); const cl=[bl?'blocked':'',iso===todayStr?'today':'',iso===TT.sel?'sel':''].filter(Boolean).join(' '); cells+=`<td class="${cl}" data-day="${iso}">${d}${has?'<br>●':''}</td>`; if((firstDow+d)%7===0) cells+='</tr><tr>'; }
-  const grid=`<table class="cal"><tr><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr><tr>${cells}</tr></table>`;
+  const grid=`<table class="cal"><tr><th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th></tr><tr>${cells}</tr></table>`;
   const selCls=DB.classes.filter(c=>c.date===TT.sel).sort((a,b)=>a.time<b.time?-1:1);
   const sel=`<div class="section-title">${dateLabel(TT.sel)}${inBlock(TT.sel)?' · 예약 불가':''}</div>`+(selCls.length?selCls.map(classBlock).join(''):'<div class="empty">이 날 수업이 없습니다</div>');
   return `${grid}<div class="note" style="margin-top:-4px">● = 수업 있음 · 빗금 = 예약 불가 · 날짜 탭 → 아래에 표시</div>${sel}`;
@@ -272,7 +274,7 @@ function vClassAdd(){
     <div class="field"><label>카테고리</label><div class="seg" id="cat" data-v="group"><a class="on" data-v="group">그룹</a><a data-v="personal">개인</a></div></div>
     <div class="field"><label>수업명</label><input class="input" name="cname" placeholder="필라테스 초급"></div>
   </div>
-  <div class="row"><div class="field"><label>날짜 <span class="req">*</span></label><input class="input" name="date" type="date" value="2026-07-10" required></div><div class="field"><label>시간 <span class="req">*</span></label><input class="input" name="time" placeholder="10:00" required></div></div>
+  <div class="row"><div class="field"><label>날짜 <span class="req">*</span></label><input class="input" name="date" type="date" value="${todayStr}" required></div><div class="field"><label>시간 <span class="req">*</span></label><input class="input" name="time" placeholder="10:00" required></div></div>
   <div class="row"><div class="field"><label>정원 <span class="req">*</span></label><input class="input" name="capacity" type="number" inputmode="numeric" min="1" value="6" required></div><div class="field"><label>장소</label><input class="input" name="place" placeholder="스튜디오 A"></div></div>
   <div class="field"><label>반복</label><div class="seg" id="rep" data-v="none"><a class="on" data-v="none">반복 안 함</a><a data-v="weekly">매주 반복</a></div></div>
   <div id="repBlock" style="display:none">
@@ -324,10 +326,10 @@ function mReserve(m){
 }
 function mtMonth(m){
   const mk=monthKey(TT.ref); const [y,mo]=mk.split('-').map(Number);
-  const firstDow=(new Date(`${mk}-01T00:00:00Z`).getUTCDay()+6)%7; const dim=new Date(Date.UTC(y,mo,0)).getUTCDate();
+  const firstDow=new Date(`${mk}-01T00:00:00Z`).getUTCDay(); const dim=new Date(Date.UTC(y,mo,0)).getUTCDate();
   let cells=''; for(let i=0;i<firstDow;i++) cells+='<td class="dim"></td>';
   for(let d=1;d<=dim;d++){ const iso=`${mk}-${String(d).padStart(2,'0')}`; const has=DB.classes.some(c=>c.date===iso); const bl=inBlock(iso); const cl=[bl?'blocked':'',iso===todayStr?'today':'',iso===TT.sel?'sel':''].filter(Boolean).join(' '); cells+=`<td class="${cl}" data-day="${iso}">${d}${has?'<br>●':''}</td>`; if((firstDow+d)%7===0) cells+='</tr><tr>'; }
-  const grid=`<table class="cal"><tr><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr><tr>${cells}</tr></table>`;
+  const grid=`<table class="cal"><tr><th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th></tr><tr>${cells}</tr></table>`;
   const selCls=DB.classes.filter(c=>c.date===TT.sel).sort((a,b)=>a.time<b.time?-1:1);
   const sel=`<div class="section-title">${dateLabel(TT.sel)}${inBlock(TT.sel)?' · 휴무':''}</div>`+(selCls.length?selCls.map(c=>mClassBlock(c,m)).join(''):'<div class="empty">이 날 수업이 없습니다</div>');
   return `${grid}<div class="note" style="margin-top:-4px">● = 수업 있음 · 빗금 = 휴무 · 날짜 탭 → 아래에 표시</div>${sel}`;
