@@ -26,12 +26,12 @@
 </style>
 </head>
 <body>
-<div class="rolebar">
-  <a id="role-tr" href="#/home">강사</a>
-  <a id="role-mb" href="#/m/reserve">회원</a>
-  <a class="reset" id="reset">⟳</a>
-</div>
 <div id="app"><div class="phone"><div class="content"><div class="empty">연결 중…</div></div></div></div>
+<div id="devbar" style="display:none;max-width:375px;margin:0 auto;background:#333;padding:6px;gap:6px;justify-content:center;font-size:11px">
+  <a id="sw-tr" style="color:#ccc;text-decoration:none;padding:4px 8px;background:#444;border-radius:5px;margin:0 3px">강사 화면</a>
+  <a id="sw-mb" style="color:#ccc;text-decoration:none;padding:4px 8px;background:#444;border-radius:5px;margin:0 3px">회원 화면</a>
+  <a id="reset" style="color:#bbb;text-decoration:none;padding:4px 8px;margin:0 3px">초기화</a>
+</div>
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -113,8 +113,6 @@ function render(){
   if(!ready){ return; }
   const h=location.hash||'#/home';
   const isMb=h.startsWith('#/m/');
-  document.getElementById('role-tr').className=isMb?'':'on';
-  document.getElementById('role-mb').className=isMb?'on':'';
   // 코드 없으면: 강사=코드 생성 화면 / 회원=코드 안내
   if(!CODE){ document.getElementById('app').innerHTML='<div class="phone">'+(isMb?vJoinNeeded():vCreateStudio())+'</div>'; wire(); return; }
   const seg=h.replace('#/','').split('/')[0]; const arg=h.replace('#/','').split('/')[1];
@@ -251,9 +249,32 @@ async function doAttend(f){ const cid=f.dataset.class; const c=DB.classes.find(x
 async function doBook(cid){ const m=curMember(); const c=DB.classes.find(x=>x.id===cid); const rc=DB.reservations.filter(r=>r.classId===cid&&r.status==='booked').length; if(rc>=c.capacity){toast('마감');return;} if(DB.reservations.find(r=>r.classId===cid&&r.memberId===m.id&&r.status==='booked')){toast('이미 예약함');return;} DB.reservations.push({id:uid(),classId:cid,memberId:m.id,status:'booked'}); await saveDB(); toast('예약 완료 · 강사 폰에 반영'); go('#/m/reserve'); }
 async function doClose(cid){ if(!confirm('폐강할까요?')) return; DB.reservations.filter(r=>r.classId===cid&&r.status==='booked').forEach(r=>r.status='cancelled'); DB.classes=DB.classes.filter(c=>c.id!==cid); await saveDB(); toast('폐강'); go('#/timetable'); }
 
+// ===== 역할 자동 판별 =====
+// 초대 링크(?join=)로 오면 회원, 그 외엔 강사. 저장된 역할 유지.
+function detectRole(){
+  const u=new URLSearchParams(location.search);
+  if(u.get('join')){ localStorage.setItem('role','member'); return 'member'; }
+  return localStorage.getItem('role')||'trainer';
+}
+function initRoute(){
+  const role=detectRole();
+  const h=location.hash;
+  const inMb=h.startsWith('#/m/');
+  if(role==='member' && !inMb){ location.hash='#/m/reserve'; }
+  else if(role==='trainer' && inMb){ location.hash='#/home'; }
+  else if(!h){ location.hash = role==='member'?'#/m/reserve':'#/home'; }
+}
+// 개발자용 역할 전환 바 (?dev=1 일 때만 노출 — 실제 강사·회원에겐 안 보임)
+function initDevBar(){
+  if(new URLSearchParams(location.search).get('dev')!=='1') return;
+  const bar=document.getElementById('devbar'); bar.style.display='flex';
+  document.getElementById('sw-tr').onclick=()=>{ localStorage.setItem('role','trainer'); location.hash='#/home'; };
+  document.getElementById('sw-mb').onclick=()=>{ localStorage.setItem('role','member'); location.hash='#/m/reserve'; };
+}
+
 // ===== 시작 =====
 window.curMember=curMember; // for doBook
-(async()=>{ if(CODE){ await ensureStudio(); subscribe(); } else { ready=true; if(!location.hash) location.hash='#/home'; render(); } })();
+(async()=>{ initDevBar(); if(CODE){ await ensureStudio(); subscribe(); initRoute(); } else { ready=true; initRoute(); render(); } })();
 </script>
 </body>
 </html>
