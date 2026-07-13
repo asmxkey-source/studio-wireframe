@@ -144,9 +144,9 @@ function vHome(){
   const unpaid=DB.payments.filter(p=>p.status==='unpaid').length;
   const expSoon=DB.members.filter(m=>memberStatus(m.id)==='만료 예정').length;
   const guide=(DB.passes.length===0||DB.members.length===0||DB.classes.length===0);
-  const invite=location.origin+location.pathname+'?s='+CODE;
+  const invite=location.origin+location.pathname+'?s='+CODE+'&join=new';
   return hdr('내 스튜디오')+`<div class="content">
-    <div class="banner">스튜디오 코드 <b>${CODE}</b> · 회원 초대 링크:<div class="codebox" style="font-size:12px;letter-spacing:0;word-break:break-all">${invite}</div><a class="btn ghost" id="copyInvite">초대 링크 복사 (카톡으로 전송)</a></div>
+    <div class="banner"><b>공통 초대 링크</b> (단톡방에 뿌리면 여러 명이 각자 가입) · 스튜디오 코드 ${CODE}<div class="codebox" style="font-size:12px;letter-spacing:0;word-break:break-all">${invite}</div><a class="btn ghost" id="copyInvite">공통 초대 링크 복사</a><div class="hint" style="margin-top:6px">특정 회원만 콕 집어 초대하려면 → 회원 탭에서 등록 후 '개별 초대 링크' 사용</div></div>
     <div class="row" style="margin-bottom:12px">
       <a class="card" href="#/tuition" style="text-align:center;margin:0;text-decoration:none;color:#222"><div style="font-size:22px;font-weight:800">${unpaid}</div><div class="sub">미납</div></a>
       <a class="card" href="#/members" style="text-align:center;margin:0;text-decoration:none;color:#222"><div style="font-size:22px;font-weight:800">${expSoon}</div><div class="sub">만료 예정</div></a>
@@ -196,9 +196,17 @@ function vPayment(mid){ const m=DB.members.find(x=>x.id===mid); if(!m) return vM
 function vTuition(){ const unpaid=DB.payments.filter(p=>p.status==='unpaid'); const paid=DB.payments.filter(p=>p.status==='paid').slice().reverse(); return hdr('수강료','#/home')+`<div class="content"><div class="section-title">미납 ${unpaid.length}</div>${unpaid.length?unpaid.map(p=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<a class="list-item" href="#/member/${p.memberId}"><span class="thumb"></span><span class="grow">${esc(m.name)}<br><span class="sub">${esc(p.passName)} (${won(p.amount)}원)<br>기한 ${md(p.date)}</span></span><span class="badge">결제</span></a>`;}).join(''):'<div class="empty">미납 없음</div>'}<div class="section-title">최근 납부</div>${paid.length?paid.map(p=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow">${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}</div>`+tabbar('tuition'); }
 
 // ===== 회원 화면 =====
-function curMember(h){ const u=new URLSearchParams(location.search); const jid=u.get('join')||localStorage.getItem('myMemberId'); if(jid&&DB.members.find(m=>m.id===jid)){ localStorage.setItem('myMemberId',jid); return DB.members.find(m=>m.id===jid);} return null; }
+function curMember(h){ const u=new URLSearchParams(location.search); const j=u.get('join'); const jid=(j&&j!=='new')?j:localStorage.getItem('myMemberId'); if(jid&&DB.members.find(m=>m.id===jid)){ localStorage.setItem('myMemberId',jid); return DB.members.find(m=>m.id===jid);} return null; }
 function vJoinMember(){
   const u=new URLSearchParams(location.search); const jid=u.get('join');
+  const isNew = jid==='new' || (jid && jid!=='new' && !DB.members.find(x=>x.id===jid));
+  if(isNew){ return hdr('회원 가입')+`<div class="content"><div class="banner">스튜디오 <b>${CODE}</b>에 오신 것을 환영합니다. 아래 정보를 입력하면 가입됩니다.</div><form id="fjoin" data-mid="new">
+    <div class="field"><label>이름 <span class="req">*</span></label><input class="input" name="name" required></div>
+    <div class="field"><label>생년월일 앞 6자리 <span class="req">*</span></label><input class="input" name="birth" inputmode="numeric" placeholder="950412" required></div>
+    <div class="field"><label>주소 <span class="req">*</span></label><input class="input" name="addr" required></div>
+    <div class="field"><label>휴대폰 <span class="req">*</span></label><input class="input" name="phone" inputmode="tel" placeholder="010-0000-0000" required></div>
+    <div class="banner">🔔 수강권 만료·수업 변경·납부 안내는 앱 알림으로 전달됩니다.</div>
+    <button class="btn" type="submit">가입 완료</button></form></div>`; }
   const m=jid?DB.members.find(x=>x.id===jid):null;
   if(m&&!m.joined){ return hdr('회원 가입')+`<div class="content"><div class="banner">${esc(m.name)}님, 환영합니다. 아래 정보를 확인·입력하면 가입 완료됩니다.</div><form id="fjoin" data-mid="${m.id}">
     <div class="field"><label>이름</label><input class="input" name="name" value="${esc(m.name)}" required></div>
@@ -224,7 +232,7 @@ function wire(){
   document.querySelectorAll('.chip.att').forEach(ch=>ch.onclick=()=>{ch.parentElement.querySelectorAll('.chip.att').forEach(x=>x.classList.remove('on'));ch.classList.add('on');});
   document.querySelectorAll('.chip.trial').forEach(ch=>ch.onclick=()=>{const on=ch.dataset.t==='1';ch.dataset.t=on?'0':'1';ch.classList.toggle('on',!on);ch.textContent=on?'체험 아님':'체험(무료)';});
   const cs=document.getElementById('createStudio'); if(cs) cs.onclick=async()=>{ CODE=newCode(); localStorage.setItem('studioCode',CODE); const url=new URL(location.href); url.searchParams.set('s',CODE); history.replaceState(null,'',url); await ensureStudio(); subscribe(); toast('스튜디오 생성: '+CODE); };
-  const ci=document.getElementById('copyInvite'); if(ci) ci.onclick=()=>copy(location.origin+location.pathname+'?s='+CODE);
+  const ci=document.getElementById('copyInvite'); if(ci) ci.onclick=()=>copy(location.origin+location.pathname+'?s='+CODE+'&join=new');
   document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy));
   const f=document.getElementById('f'); if(f) f.onsubmit=e=>{e.preventDefault();handleForm(location.hash,Object.fromEntries(new FormData(f)));};
   const fpay=document.getElementById('fpay'); if(fpay) fpay.onsubmit=e=>{e.preventDefault();doPayment(fpay);};
@@ -239,7 +247,9 @@ async function handleForm(hash,d){
   else if(hash.startsWith('#/memberAdd')){ const id=uid(); DB.members.push({id,name:d.name,phone:d.phone,joined:false}); await saveDB(); toast('회원 등록 · 초대 링크 생성'); go('#/member/'+id); }
   else if(hash.startsWith('#/classAdd')){ const cat=document.getElementById('cat').dataset.v; DB.classes.push({id:uid(),category:cat,name:d.name,date:d.date,time:d.time,capacity:cat==='personal'?1:+d.capacity,place:d.place}); await saveDB(); toast('수업 등록'); go('#/timetable'); }
 }
-async function doJoin(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f)); const m=DB.members.find(x=>x.id===mid); if(m){ m.name=d.name; m.phone=d.phone; m.birth=d.birth; m.addr=d.addr; m.joined=true; localStorage.setItem('myMemberId',mid); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); } }
+async function doJoin(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f));
+  if(mid==='new'){ const id=uid(); DB.members.push({id,name:d.name,phone:d.phone,birth:d.birth,addr:d.addr,joined:true}); localStorage.setItem('myMemberId',id); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); return; }
+  const m=DB.members.find(x=>x.id===mid); if(m){ m.name=d.name; m.phone=d.phone; m.birth=d.birth; m.addr=d.addr; m.joined=true; localStorage.setItem('myMemberId',mid); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); } }
 async function doPayment(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f)); const method=document.getElementById('method').dataset.v; const startMode=document.getElementById('start').dataset.v; const pass=DB.passes.find(p=>p.id===d.passId); if(!pass) return; const unpaid=method==='미납'; DB.payments.push({id:uid(),memberId:mid,passId:pass.id,passName:pass.name,method:unpaid?'-':method,amount:pass.price,date:unpaid?addDays(todayStr,5):todayStr,status:unpaid?'unpaid':'paid'});
   if(!unpaid){ const start=startMode==='now'?todayStr:null; const mp={id:uid(),memberId:mid,passId:pass.id,name:pass.name,scope:pass.scope,scopeCat:pass.scopeCat,total:pass.count,remaining:pass.count,status:start?'active':'pending',start:start,expire:start?addMonths(start,pass.months):null,months:pass.months}; const pend=DB.attendance.filter(a=>a.memberId===mid&&a.pending&&!a.trial); if(pend.length){ mp.status='active'; mp.start=pend[0].date; mp.expire=addMonths(pend[0].date,pass.months); pend.forEach(a=>{ if(mp.remaining>0){mp.remaining--; a.deducted=true; a.pending=false;} }); } DB.mpasses.push(mp); await saveDB(); toast(pend.length?`납부 완료 · 출석 ${pend.length}건 소급 차감 → 잔여 ${mp.remaining}회`:'납부 완료 · 수강권 발급'); }
   else { await saveDB(); toast('미납 등록'); }
