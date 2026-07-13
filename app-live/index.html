@@ -240,7 +240,7 @@ function vTimetable(){
   const seg=`<div class="seg" id="ttseg"><a class="${view==='week'?'on':''}" data-v="week">주간</a><a class="${view==='month'?'on':''}" data-v="month">월간</a></div>
   <div class="note" style="margin-top:-4px">※ 주간/월간 선택은 마지막 상태로 저장됨 (다시 열어도 유지)</div>`;
   const body = view==='week'? ttWeekBody(classBlock,'예약 불가') : ttMonth();
-  return hdr('시간표')+`<div class="content">${guideCards()}${seg}${ttNav(ttLabel())}${body}<a class="btn" href="#/classAdd" style="margin-top:12px">＋ 수업 등록</a><a class="btn ghost" href="#/blockAdd">🚫 예약 불가 설정</a></div>`+tabbar('timetable');
+  return hdr('시간표')+`<div class="content">${guideCards()}${seg}${ttNav(ttLabel())}${body}</div>`+tabbar('timetable');
 }
 function ttMonth(){
   const mk=monthKey(TT.ref); const [y,mo]=mk.split('-').map(Number);
@@ -254,7 +254,7 @@ function ttMonth(){
   return `${grid}<div class="note" style="margin-top:-4px">● = 수업 있음 · 빗금 = 예약 불가 · 날짜 탭 → 아래에 표시</div>${sel}`;
 }
 function vBlockAdd(){
-  return hdr('예약 불가 설정','#/timetable')+`<div class="content">
+  return hdr('예약 불가 설정','#/classAdd')+`<div class="content">
   <div class="note">휴가·개인 일정 기간을 막습니다. 이 기간의 반복 회차는 생성되지 않고, 겹치는 회원 수강권의 유효기간은 그만큼 자동 연장됩니다.</div>
   <form id="fblock">
   <div class="row"><div class="field"><label>시작일 <span class="req">*</span></label><input class="input" name="start" type="date" value="${todayStr}" required></div><div class="field"><label>종료일 <span class="req">*</span></label><input class="input" name="end" type="date" value="${todayStr}" required></div></div>
@@ -262,7 +262,7 @@ function vBlockAdd(){
   <button class="btn" type="submit">예약 불가 저장</button></form>
   <div class="section-title">등록된 예약 불가 기간</div>
   ${(DB.blocks||[]).length?DB.blocks.slice().reverse().map(b=>`<div class="hatch">🚫 ${dateLabel(b.start)} ~ ${dateLabel(b.end)}${b.reason?' · '+esc(b.reason):''} <a data-unblock="${b.id}" style="float:right;color:#333">해제</a></div>`).join(''):'<div class="empty">없음</div>'}
-  </div>`+tabbar('timetable');
+  </div>`+tabbar('classAdd');
 }
 function vClassEdit(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const series=!!c.seriesId;
   return hdr('수업 수정','#/class/'+id)+`<div class="content"><div class="card"><b>${esc(c.name)}</b><div class="note" style="margin:0">${dateLabel(c.date)} ${c.time}</div></div>
@@ -294,7 +294,9 @@ function vClassAdd(){
     <div class="field" id="endUntilF" style="display:none"><label>종료일</label><input class="input" id="endUntil" type="date"></div>
     <div class="hint">예약 불가 기간과 겹치는 회차는 자동으로 건너뜁니다. '횟수'는 건너뛴 만큼 뒤로 밀어 채웁니다. '계속'은 약 3개월치를 미리 생성합니다.</div>
   </div>
-  <button class="btn" type="submit">수업 등록</button></form></div>`+tabbar('classAdd'); }
+  <button class="btn" type="submit">수업 등록</button></form>
+  <div class="section-title">일정 차단</div>
+  <a class="btn ghost" href="#/blockAdd">🚫 예약 불가 설정 (휴가·개인 일정)</a></div>`+tabbar('classAdd'); }
 function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="list-item"><span class="thumb"></span><span class="grow">${esc(m.name)}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}
 ${(()=>{ const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)); const full=rs.length>=c.capacity; if(!avail.length||full) return full?'<div class="hint">정원 마감 — 예약 추가 불가</div>':''; return `<div class="field" style="margin-top:10px"><label>회원 예약 추가<br><span style="font-weight:400;color:#888;font-size:11px">(강사 대리)</span></label>${c.seriesId?`<div class="seg" id="bookScope" data-v="after" style="margin-bottom:6px"><a data-v="one">이 회차만</a><a class="on" data-v="after">이후 회차 모두<br>(고정 수강)</a></div>`:''}<div class="row"><select class="input" id="bookSel">${avail.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><a class="btn ghost" id="trainerBook" data-cid="${id}" style="flex:0 0 80px;margin:0">추가</a></div></div>`; })()}
 ${rs.length?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석 체크</a>`:''}${c.seriesId?'<div class="note" style="margin-top:8px">🔁 매주 반복 수업</div>':''}<a class="btn ghost" href="#/classEdit/${id}" style="margin-top:12px">수정</a><div class="section-title">수업 접기 (폐강)</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">폐강</a>`}</div>`+tabbar('timetable'); }
