@@ -193,7 +193,15 @@ function vMembers(){ return hdr('회원','#/home')+`<div class="content"><div st
 function vMemberAdd(){ return hdr('회원 등록 · 초대','#/members')+`<div class="content"><div class="note">이름·휴대폰 입력 후 등록하면 초대 링크가 만들어집니다. 그 링크를 카톡으로 회원에게 보내세요.</div><form id="f">
   <div class="field"><label>이름 <span class="req">*</span></label><input class="input" name="name" required></div>
   <div class="field"><label>휴대폰 번호 <span class="req">*</span></label><input class="input" name="phone" inputmode="tel" placeholder="010-1234-5678" required></div>
-  <button class="btn" type="submit">등록하고 초대 링크 만들기</button></form></div>`+tabbar('members'); }
+  <button class="btn" type="submit">등록하고 초대 링크 만들기</button></form>
+  <div class="section-title">여러 명 한 번에 등록</div>
+  <form id="fbulk">
+  <div class="field"><label>한 줄에 한 명씩 — 이름,전화번호</label><textarea class="input" name="bulk" rows="5" placeholder="김민지,010-1111-2222
+박서연,010-3333-4444
+이하늘,010-5555-6666"></textarea></div>
+  <button class="btn ghost" type="submit">일괄 등록</button></form>
+  <div class="hint">일괄 등록은 초대 발송 없이 명단만 등록합니다. 초대가 필요하면 각 회원 상세에서 개별 링크를 보내세요.</div>
+  </div>`+tabbar('members'); }
 function vMemberDetail(id){ const m=DB.members.find(x=>x.id===id); if(!m) return vMembers(); const ps=memberPasses(id); const atts=DB.attendance.filter(a=>a.memberId===id); const pays=DB.payments.filter(p=>p.memberId===id);
   const invite=location.origin+location.pathname+'?s='+CODE+'&join='+id;
   return hdr('회원 상세','#/members')+`<div class="content">
@@ -203,6 +211,7 @@ function vMemberDetail(id){ const m=DB.members.find(x=>x.id===id); if(!m) return
   <div class="section-title">보유 수강권</div>${ps.length?ps.map(p=>`<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':'만료'}</span><a data-delpass="${p.id}" style="float:right;font-size:11px;color:#888;text-decoration:underline">삭제</a><div class="note" style="margin:0">${p.status==='pending'?'개시 전':'잔여 '+p.remaining+'/'+p.total+'회 · ~'+md(p.expire)}</div></div>`).join(''):'<div class="empty">없음</div>'}
   <div class="section-title">출석 이력</div>${atts.length?atts.slice().reverse().map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${esc(c.name||'수업')}(${dateLabel(c.date||a.date)}, ${c.time||''})<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험':a.deducted?' · 1회 차감':''}</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}
   <div class="section-title">결제 이력</div>${pays.length?pays.slice().reverse().map(p=>`<div class="list-item"><span class="grow">${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.status==='unpaid'?'미납 · 기한 '+md(p.date):p.method+' ('+md(p.date)+')'}</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`).join(''):'<div class="empty">없음</div>'}
+  <a class="btn ghost" data-delmember="${id}" style="margin-top:16px">🗑 회원 삭제 (잘못 등록한 경우)</a>
   </div>`+tabbar('members'); }
 function ttNav(label){
   return `<div style="display:flex;align-items:center;margin:2px 0 8px">
@@ -285,7 +294,9 @@ function vClassAdd(){
     <div class="hint">예약 불가 기간과 겹치는 회차는 자동으로 건너뜁니다. '횟수'는 건너뛴 만큼 뒤로 밀어 채웁니다. '계속'은 약 3개월치를 미리 생성합니다.</div>
   </div>
   <button class="btn" type="submit">수업 등록</button></form></div>`+tabbar('timetable'); }
-function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="list-item"><span class="thumb"></span><span class="grow">${esc(m.name)}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}${rs.length?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석 체크</a>`:''}${c.seriesId?'<div class="note" style="margin-top:8px">🔁 매주 반복 수업</div>':''}<a class="btn ghost" href="#/classEdit/${id}" style="margin-top:12px">수정</a><div class="section-title">수업 접기 (폐강)</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">폐강</a>`}</div>`+tabbar('timetable'); }
+function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="list-item"><span class="thumb"></span><span class="grow">${esc(m.name)}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}
+${(()=>{ const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)); const full=rs.length>=c.capacity; if(!avail.length||full) return full?'<div class="hint">정원 마감 — 예약 추가 불가</div>':''; return `<div class="field" style="margin-top:10px"><label>회원 예약 추가 (강사 대리)</label><div class="row"><select class="input" id="bookSel">${avail.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><a class="btn ghost" id="trainerBook" data-cid="${id}" style="flex:0 0 80px;margin:0">추가</a></div></div>`; })()}
+${rs.length?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석 체크</a>`:''}${c.seriesId?'<div class="note" style="margin-top:8px">🔁 매주 반복 수업</div>':''}<a class="btn ghost" href="#/classEdit/${id}" style="margin-top:12px">수정</a><div class="section-title">수업 접기 (폐강)</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">폐강</a>`}</div>`+tabbar('timetable'); }
 function vAttend(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('출석 체크','#/class/'+id)+`<div class="content"><div class="card"><b>${esc(c.name)}</b><div class="note" style="margin:0">${md(c.date)} ${c.time}</div></div><form id="fatt" data-class="${id}">${rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="card" data-mid="${r.memberId}"><b>${esc(m.name)}</b> ${up?'<span class="sub">'+esc(up.name)+' 잔여 '+up.remaining+'회</span>':'<span class="tag">결제 전</span>'}<div style="margin-top:6px"><span class="chip att on" data-r="present">출석</span><span class="chip att" data-r="absent">결석</span><span class="chip att" data-r="noshow">노쇼</span> <span class="chip trial" data-t="0">체험 아님</span></div></div>`;}).join('')}<button class="btn" type="submit">저장 (출석 시 자동 차감)</button></form></div>`+tabbar('timetable'); }
 function vPayment(mid){ const m=DB.members.find(x=>x.id===mid); if(!m) return vMembers(); if(!DB.passes.length) return hdr('결제','#/member/'+mid)+`<div class="content"><div class="empty">먼저 수강권을 등록하세요<br><a class="btn" href="#/passAdd" style="margin-top:10px">수강권 만들기</a></div></div>`+tabbar('members'); return hdr('결제 사항 등록','#/member/'+mid)+`<div class="content"><div class="card"><b>${esc(m.name)}</b></div><form id="fpay" data-mid="${mid}"><div class="field"><label>수강권 <span class="req">*</span></label><select class="input" name="passId" required>${DB.passes.map(p=>`<option value="${p.id}">${esc(p.name)} — ${won(p.price)}원</option>`).join('')}</select></div><div class="field"><label>결제 수단</label><div class="seg" id="method" data-v="현금"><a class="on" data-v="현금">현금</a><a data-v="계좌이체">계좌이체</a><a data-v="카드">카드</a><a data-v="미납">미납</a></div></div><div class="field"><label>개시 방식</label><div class="seg" id="start" data-v="first"><a class="on" data-v="first">첫 출석 시</a><a data-v="now">즉시</a></div></div><button class="btn" type="submit">결제 등록</button></form></div>`+tabbar('members'); }
 function vTuition(){ const unpaid=DB.payments.filter(p=>p.status==='unpaid'); const paid=DB.payments.filter(p=>p.status==='paid').slice().reverse(); return hdr('수강료','#/home')+`<div class="content"><div class="section-title">미납 ${unpaid.length}</div>${unpaid.length?unpaid.map(p=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<a class="list-item" href="#/member/${p.memberId}"><span class="thumb"></span><span class="grow">${esc(m.name)}<br><span class="sub">${esc(p.passName)} (${won(p.amount)}원)<br>기한 ${md(p.date)}</span></span><span class="badge">결제</span></a>`;}).join(''):'<div class="empty">미납 없음</div>'}<div class="section-title">최근 납부</div>${paid.length?paid.map(p=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow">${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}</div>`+tabbar('tuition'); }
@@ -377,6 +388,37 @@ function wire(){
   document.querySelectorAll('[data-delpay]').forEach(b=>b.onclick=()=>doDelPay(b.dataset.delpay));
   document.querySelectorAll('[data-delpass]').forEach(b=>b.onclick=()=>doDelPass(b.dataset.delpass));
   document.querySelectorAll('[data-delproduct]').forEach(b=>b.onclick=()=>doDelProduct(b.dataset.delproduct));
+  const fbulk=document.getElementById('fbulk'); if(fbulk) fbulk.onsubmit=e=>{e.preventDefault();doBulkAdd(fbulk);};
+  const tb=document.getElementById('trainerBook'); if(tb) tb.onclick=()=>doTrainerBook(tb.dataset.cid);
+  document.querySelectorAll('[data-delmember]').forEach(b=>b.onclick=()=>doDelMember(b.dataset.delmember));
+}
+async function doBulkAdd(f){
+  const txt=(new FormData(f)).get('bulk')||''; const lines=txt.split(/\n/).map(s=>s.trim()).filter(Boolean);
+  let n=0,bad=0;
+  lines.forEach(l=>{ const parts=l.split(/[,\t]/).map(s=>s.trim()).filter(Boolean); const p2=parts.length>=2?parts:l.split(/\s+/).map(s=>s.trim()).filter(Boolean);
+    if(p2.length>=2&&/\d{3,}/.test(p2[1])){ DB.members.push({id:uid(),name:p2[0],phone:p2.slice(1).join('-').replace(/--+/g,'-'),joined:false}); n++; } else bad++; });
+  if(!n){ toast('형식을 확인하세요 — 한 줄에 "이름,전화번호"'); return; }
+  await saveDB(); toast(`${n}명 일괄 등록 완료${bad?` (${bad}줄 형식 오류 제외)`:''}`); go('#/members');
+}
+async function doTrainerBook(cid){
+  const sel=document.getElementById('bookSel'); if(!sel||!sel.value){ toast('회원을 선택하세요'); return; }
+  const mid=sel.value; const c=DB.classes.find(x=>x.id===cid); if(!c) return;
+  const rc=DB.reservations.filter(r=>r.classId===cid&&r.status==='booked').length;
+  if(rc>=c.capacity){ toast('정원 마감'); return; }
+  if(DB.reservations.find(r=>r.classId===cid&&r.memberId===mid&&r.status==='booked')){ toast('이미 예약된 회원'); return; }
+  DB.reservations.push({id:uid(),classId:cid,memberId:mid,status:'booked'});
+  await saveDB(); toast('예약 추가 · 회원에게 확정 알림(가정)'); render();
+}
+async function doDelMember(id){
+  const m=DB.members.find(x=>x.id===id); if(!m) return;
+  const cnt={pass:DB.mpasses.filter(x=>x.memberId===id).length,res:DB.reservations.filter(x=>x.memberId===id).length,att:DB.attendance.filter(x=>x.memberId===id).length,pay:DB.payments.filter(x=>x.memberId===id).length};
+  if(!confirm(`'${m.name}' 회원을 삭제할까요?\n연결된 기록도 함께 삭제됩니다 — 수강권 ${cnt.pass} · 예약 ${cnt.res} · 출석 ${cnt.att} · 결제 ${cnt.pay}`)) return;
+  DB.members=DB.members.filter(x=>x.id!==id);
+  DB.mpasses=DB.mpasses.filter(x=>x.memberId!==id);
+  DB.reservations=DB.reservations.filter(x=>x.memberId!==id);
+  DB.attendance=DB.attendance.filter(x=>x.memberId!==id);
+  DB.payments=DB.payments.filter(x=>x.memberId!==id);
+  await saveDB(); toast('회원 삭제 완료'); go('#/members');
 }
 async function doDelProduct(id){ const p=DB.passes.find(x=>x.id===id); if(!p) return;
   const sold=DB.mpasses.filter(x=>x.passId===id).length;
