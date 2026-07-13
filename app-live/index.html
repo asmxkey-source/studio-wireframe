@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>스튜디오 관리 앱 (실시간)</title>
+<link rel="stylesheet" href="../wireframe/css/wire.css">
+<style>
+  body { background:#e8e8e8; }
+  .rolebar { max-width:375px; margin:0 auto; display:flex; gap:6px; padding:8px; background:#333; align-items:center; }
+  .rolebar a { flex:1; text-align:center; padding:8px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:700; color:#ccc; background:#444; }
+  .rolebar a.on { background:#fff; color:#111; }
+  .rolebar .reset { flex:0 0 auto; background:transparent; color:#bbb; font-weight:400; font-size:11px; padding:8px 4px; }
+  input.input, select.input, textarea.input { -webkit-appearance:none; appearance:none; background:#fff; font-size:16px; font-family:inherit; }
+  .toast { position:fixed; left:50%; bottom:80px; transform:translateX(-50%); background:#111; color:#fff; padding:10px 16px; border-radius:20px; font-size:13px; z-index:99; opacity:0; transition:opacity .2s; max-width:340px; text-align:center; }
+  .toast.show { opacity:1; }
+  .chip { display:inline-block; font-size:12px; border:1px solid #888; border-radius:14px; padding:5px 10px; margin:2px 2px 2px 0; cursor:pointer; background:#fff; }
+  .chip.on { background:#666; color:#fff; border-color:#666; }
+  .btn, .chip, .seg a, .tab, .list-item, .classblock, .day { cursor:pointer; }
+  .prog { height:14px; border:1px solid #999; border-radius:7px; overflow:hidden; background:#eee; }
+  .prog > div { height:100%; background:#888; }
+  .empty { border:2px dashed #bbb; border-radius:8px; padding:28px 12px; text-align:center; color:#888; font-size:13px; background:#fcfcfc; }
+  .synced { font-size:10px; color:#8a8; }
+  .codebox { font-size:20px; font-weight:800; letter-spacing:3px; text-align:center; background:#f0f0f0; border:1px solid #bbb; border-radius:8px; padding:12px; margin:8px 0; }
+  .banner { background:#fffbe6; border:1px solid #e0d48a; border-radius:8px; padding:10px; font-size:12px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="rolebar">
+  <a id="role-tr" href="#/home">강사</a>
+  <a id="role-mb" href="#/m/reserve">회원</a>
+  <a class="reset" id="reset">⟳</a>
+</div>
+<div id="app"><div class="phone"><div class="content"><div class="empty">연결 중…</div></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+// ===== Firebase config (공개용 식별자) =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBbQHt5FksViMfgKeo3WwrKqlz7T1NSii8",
+  authDomain: "studio-app-81e52.firebaseapp.com",
+  projectId: "studio-app-81e52",
+  storageBucket: "studio-app-81e52.firebasestorage.app",
+  messagingSenderId: "452986965756",
+  appId: "1:452986965756:web:d6c663811bde36cde8d179"
+};
+const fbApp = initializeApp(firebaseConfig);
+const fdb = getFirestore(fbApp);
+
+// ===== 스튜디오 코드: 강사·회원이 같은 데이터를 공유하는 열쇠 =====
+// URL ?s=CODE 로 참여. 없으면 강사가 새로 만들거나 저장된 코드 사용.
+function studioCode(){
+  const u=new URLSearchParams(location.search);
+  let c=u.get('s')||localStorage.getItem('studioCode');
+  if(c){ localStorage.setItem('studioCode',c); }
+  return c;
+}
+function newCode(){ // 6자리 코드
+  const s='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let c=''; for(let i=0;i<6;i++) c+=s[Math.floor(Math.random()*s.length)]; return c;
+}
+let CODE=studioCode();
+
+const empty=()=>({members:[],passes:[],classes:[],mpasses:[],reservations:[],attendance:[],payments:[]});
+let DB=empty();
+let ready=false;
+
+const won=n=>Number(n||0).toLocaleString('ko-KR');
+const todayStr='2026-07-10';
+function uid(){ return Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); }
+function md(iso){ if(!iso) return ''; const p=iso.split('-'); return p[1].replace(/^0/,'')+'/'+p[2].replace(/^0/,''); }
+function addMonths(iso,m){ const d=new Date(iso+'T00:00:00'); d.setMonth(d.getMonth()+Number(m)); return d.toISOString().slice(0,10); }
+function addDays(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+Number(n)); return d.toISOString().slice(0,10); }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ===== Firestore 동기화 =====
+async function saveDB(){ if(!CODE) return; try{ await setDoc(doc(fdb,'studios',CODE), DB); }catch(e){ toast('저장 오류: '+e.code); } }
+function subscribe(){
+  if(!CODE) return;
+  onSnapshot(doc(fdb,'studios',CODE), snap=>{
+    if(snap.exists()){ DB=Object.assign(empty(),snap.data()); }
+    ready=true; render();
+  }, err=>{ document.getElementById('app').innerHTML=`<div class="phone"><div class="content"><div class="banner">Firestore 연결 오류: ${err.code}. 테스트 모드로 만들었는지 확인해주세요.</div></div></div>`; });
+}
+async function ensureStudio(){
+  if(!CODE){ return; }
+  const ref=doc(fdb,'studios',CODE); const s=await getDoc(ref);
+  if(!s.exists()) await setDoc(ref, DB);
+}
+
+// ===== 상태 계산 =====
+function memberPasses(mid){ return DB.mpasses.filter(p=>p.memberId===mid); }
+function memberStatus(mid){
+  const ps=memberPasses(mid).filter(p=>p.status!=='refunded');
+  const active=ps.find(p=>p.status==='active'&&p.remaining>0&&p.expire>=todayStr);
+  if(active){ const soon=active.remaining<=1||active.expire<=addDays(todayStr,7); return soon?'만료 예정':'활성'; }
+  if(ps.some(p=>p.status==='pending')) return '개시 대기';
+  if(DB.payments.some(p=>p.memberId===mid&&p.status==='unpaid')) return '미납';
+  if(ps.length) return '만료';
+  return '신규';
+}
+function usablePass(mid,cat){ return memberPasses(mid).filter(p=>p.status==='active'&&p.remaining>0&&(p.scope==='all'||p.scopeCat===cat)).sort((a,b)=>a.expire<b.expire?-1:1)[0]; }
+
+// ===== 라우팅 =====
+function go(h){ location.hash=h; }
+window.addEventListener('hashchange',render);
+document.getElementById('reset').onclick=()=>{ if(confirm('이 스튜디오의 모든 데이터를 지울까요? (연결된 모든 폰에서 사라집니다)')){ DB=empty(); saveDB(); toast('초기화'); }};
+
+function render(){
+  if(!ready){ return; }
+  const h=location.hash||'#/home';
+  const isMb=h.startsWith('#/m/');
+  document.getElementById('role-tr').className=isMb?'':'on';
+  document.getElementById('role-mb').className=isMb?'on':'';
+  // 코드 없으면: 강사=코드 생성 화면 / 회원=코드 안내
+  if(!CODE){ document.getElementById('app').innerHTML='<div class="phone">'+(isMb?vJoinNeeded():vCreateStudio())+'</div>'; wire(); return; }
+  const seg=h.replace('#/','').split('/')[0]; const arg=h.replace('#/','').split('/')[1];
+  let html='';
+  if(isMb){ const m=curMember(h); const mseg=h.replace('#/m/','').split('/')[0]; const marg=h.replace('#/m/','').split('/')[1]; html=(m&&!m.joined)?vJoinMember():(m?({reserve:mReserve,classdt:mClassReserve,pass:mPass,usage:mUsage,profile:mProfile}[mseg]||mReserve)(m,marg):vJoinMember()); }
+  else { html=({home:vHome,passes:vPasses,passAdd:vPassAdd,members:vMembers,memberAdd:vMemberAdd,member:()=>vMemberDetail(arg),timetable:vTimetable,classAdd:vClassAdd,class:()=>vClassDetail(arg),attend:()=>vAttend(arg),payment:()=>vPayment(arg),tuition:vTuition}[seg]||vHome)(); }
+  document.getElementById('app').innerHTML='<div class="phone">'+html+'</div>'; wire();
+}
+
+// ===== 공통 =====
+function hdr(title,back){ return `<div class="topbar">${back?`<a class="back" href="${back}">←</a>`:'<div class="back"></div>'}<div class="title">${title}</div><div class="spacer synced">●연동</div></div>`; }
+function tabbar(a){ const t=[['home','홈'],['timetable','시간표'],['members','회원'],['tuition','수강료'],['passes','더보기']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
+function mtab(a){ const t=[['reserve','수업 예약'],['pass','수강권'],['usage','이용내역'],['profile','내 정보']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/m/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
+
+// ===== 스튜디오 코드 화면 =====
+function vCreateStudio(){
+  return hdr('스튜디오 만들기')+`<div class="content">
+    <div class="banner">처음이시면 스튜디오를 만드세요. 만들어진 <b>초대 링크</b>를 회원에게 카톡으로 보내면, 회원이 가입한 내용이 이 폰에 실시간으로 나타납니다.</div>
+    <a class="btn" id="createStudio">＋ 내 스튜디오 만들기</a>
+  </div>`;
+}
+function vJoinNeeded(){
+  return hdr('회원')+`<div class="content"><div class="empty">강사에게 받은 <b>초대 링크</b>로 접속해주세요.<br><span style="font-size:11px">링크에 스튜디오 코드가 들어있습니다.</span></div></div>`;
+}
+
+// ===== 강사 화면 =====
+function vHome(){
+  const todays=DB.classes.filter(c=>c.date===todayStr).sort((a,b)=>a.time<b.time?-1:1);
+  const unpaid=DB.payments.filter(p=>p.status==='unpaid').length;
+  const expSoon=DB.members.filter(m=>memberStatus(m.id)==='만료 예정').length;
+  const guide=(DB.passes.length===0||DB.members.length===0||DB.classes.length===0);
+  const invite=location.origin+location.pathname+'?s='+CODE;
+  return hdr('내 스튜디오')+`<div class="content">
+    <div class="banner">스튜디오 코드 <b>${CODE}</b> · 회원 초대 링크:<div class="codebox" style="font-size:12px;letter-spacing:0;word-break:break-all">${invite}</div><a class="btn ghost" id="copyInvite">초대 링크 복사 (카톡으로 전송)</a></div>
+    <div class="row" style="margin-bottom:12px">
+      <a class="card" href="#/tuition" style="text-align:center;margin:0;text-decoration:none;color:#222"><div style="font-size:22px;font-weight:800">${unpaid}</div><div class="sub">미납</div></a>
+      <a class="card" href="#/members" style="text-align:center;margin:0;text-decoration:none;color:#222"><div style="font-size:22px;font-weight:800">${expSoon}</div><div class="sub">만료 예정</div></a>
+    </div>
+    ${guide?`<div class="section-title">시작하기</div>
+      <a class="card" href="#/passes" style="display:block;text-decoration:none;color:#222"><b>① 수강권 만들기</b> ${DB.passes.length?'✓':''}</a>
+      <a class="card" href="#/members" style="display:block;text-decoration:none;color:#222"><b>② 회원 등록 · 초대</b> ${DB.members.length?'✓':''}</a>
+      <a class="card" href="#/timetable" style="display:block;text-decoration:none;color:#222"><b>③ 수업 등록</b> ${DB.classes.length?'✓':''}</a>`:''}
+    <div class="section-title">오늘 수업 <span class="sub" style="font-weight:400">7/10 (금)</span></div>
+    ${todays.length?todays.map(classBlock).join(''):'<div class="empty">오늘 등록된 수업이 없습니다</div>'}
+    <a class="btn" href="#/classAdd" style="margin-top:12px">＋ 수업 등록</a>
+  </div>`+tabbar('home');
+}
+function classBlock(c){ const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length; return `<a class="classblock ${c.category==='personal'?'personal':''}" href="#/class/${c.id}"><span class="t">${c.time}</span> <span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><div class="n">${esc(c.name)}</div><div class="meta">예약 ${rc}/${c.capacity}${rc>=c.capacity?' · 마감':' · 잔여 '+(c.capacity-rc)}</div></a>`; }
+function vPasses(){ return hdr('수강권 관리','#/home')+`<div class="content">${DB.passes.length?DB.passes.map(p=>`<div class="card"><span class="tag ${p.category==='group'?'dark':''}">${p.category==='group'?'그룹':'개인'}</span> <b>${esc(p.name)}</b><div class="note" style="margin:0">${won(p.price)}원 · 유효 ${p.months}개월 · 회당 ${won(Math.round(p.price/p.count))}원 · ${p.scope==='all'?'전체 수업':'특정 수업'}</div></div>`).join(''):'<div class="empty">등록된 수강권이 없습니다</div>'}<a class="btn" href="#/passAdd" style="margin-top:12px">＋ 수강권 추가</a></div>`+tabbar('passes'); }
+function vPassAdd(){ return hdr('수강권 추가','#/passes')+`<div class="content"><form id="f">
+  <div class="field"><label>카테고리</label><div class="seg" id="cat" data-v="group"><a class="on" data-v="group">그룹</a><a data-v="personal">개인</a></div></div>
+  <div class="field"><label>수강권명 <span class="req">*</span></label><input class="input" name="name" placeholder="예: 그룹 10회권" required></div>
+  <div class="row"><div class="field"><label>횟수 <span class="req">*</span></label><input class="input" name="count" type="number" inputmode="numeric" min="1" required></div><div class="field"><label>유효기간(개월) <span class="req">*</span></label><input class="input" name="months" type="number" inputmode="numeric" min="1" required></div></div>
+  <div class="field"><label>금액(원) <span class="req">*</span></label><input class="input" name="price" type="number" inputmode="numeric" min="0" required></div>
+  <button class="btn" type="submit">수강권 등록</button></form></div>`+tabbar('passes'); }
+function vMembers(){ return hdr('회원','#/home')+`<div class="content"><div style="margin-bottom:8px"><span class="tag dark">전체 ${DB.members.length}</span></div>${DB.members.length?DB.members.map(m=>{const st=memberStatus(m.id);const ap=memberPasses(m.id).find(p=>p.status==='active');return `<a class="list-item" href="#/member/${m.id}"><span class="thumb"></span><span class="grow">${esc(m.name)} <span class="tag ${['미납','만료 예정'].includes(st)?'dark':''}">${st}</span> ${m.joined?'':'<span class="tag">가입대기</span>'}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':'수강권 없음'}<br>${m.phone}</span></span><span class="arrow">›</span></a>`;}).join(''):'<div class="empty">등록된 회원이 없습니다</div>'}<a class="btn" href="#/memberAdd" style="margin-top:12px">＋ 회원 등록 · 초대</a></div>`+tabbar('members'); }
+function vMemberAdd(){ return hdr('회원 등록 · 초대','#/members')+`<div class="content"><div class="note">이름·휴대폰 입력 후 등록하면 초대 링크가 만들어집니다. 그 링크를 카톡으로 회원에게 보내세요.</div><form id="f">
+  <div class="field"><label>이름 <span class="req">*</span></label><input class="input" name="name" required></div>
+  <div class="field"><label>휴대폰 번호 <span class="req">*</span></label><input class="input" name="phone" inputmode="tel" placeholder="010-1234-5678" required></div>
+  <button class="btn" type="submit">등록하고 초대 링크 만들기</button></form></div>`+tabbar('members'); }
+function vMemberDetail(id){ const m=DB.members.find(x=>x.id===id); if(!m) return vMembers(); const ps=memberPasses(id); const atts=DB.attendance.filter(a=>a.memberId===id); const pays=DB.payments.filter(p=>p.memberId===id);
+  const invite=location.origin+location.pathname+'?s='+CODE+'&join='+id;
+  return hdr('회원 상세','#/members')+`<div class="content">
+  <div class="card"><h3 style="font-size:16px">${esc(m.name)} <span class="tag">${memberStatus(id)}</span> ${m.joined?'':'<span class="tag">가입대기</span>'}</h3><div class="note" style="margin:0">${m.phone}</div></div>
+  ${m.joined?'':`<div class="banner">아직 가입 전입니다. 아래 초대 링크를 카톡으로 보내세요.<div class="codebox" style="font-size:11px;letter-spacing:0;word-break:break-all">${invite}</div><a class="btn ghost" data-copy="${esc(invite)}">이 회원 초대 링크 복사</a></div>`}
+  <a class="btn" href="#/payment/${id}">💳 결제 사항 등록</a>
+  <div class="section-title">보유 수강권</div>${ps.length?ps.map(p=>`<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':'만료'}</span><div class="note" style="margin:0">${p.status==='pending'?'개시 전':'잔여 '+p.remaining+'/'+p.total+'회 · ~'+md(p.expire)}</div></div>`).join(''):'<div class="empty">없음</div>'}
+  <div class="section-title">출석 이력</div>${atts.length?atts.slice().reverse().map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${md(c.date)} ${c.time||''} · ${esc(c.name||'')}<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험':a.deducted?' · 1회 차감':''}</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}
+  <div class="section-title">결제 이력</div>${pays.length?pays.slice().reverse().map(p=>`<div class="list-item"><span class="grow">${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.status==='unpaid'?'미납 · 기한 '+md(p.date):p.method+' ('+md(p.date)+')'}</span></span></div>`).join(''):'<div class="empty">없음</div>'}
+  </div>`+tabbar('members'); }
+function vTimetable(){ const cls=DB.classes.slice().sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1); const byDate={}; cls.forEach(c=>{(byDate[c.date]=byDate[c.date]||[]).push(c);}); return hdr('시간표','#/home')+`<div class="content">${cls.length?Object.keys(byDate).sort().map(d=>`<div class="section-title">${md(d)}${d===todayStr?' · 오늘':''}</div>`+byDate[d].map(classBlock).join('')).join(''):'<div class="empty">등록된 수업이 없습니다</div>'}<a class="btn" href="#/classAdd" style="margin-top:12px">＋ 수업 등록</a></div>`+tabbar('timetable'); }
+function vClassAdd(){ return hdr('수업 등록','#/timetable')+`<div class="content"><form id="f">
+  <div class="field"><label>카테고리</label><div class="seg" id="cat" data-v="group"><a class="on" data-v="group">그룹</a><a data-v="personal">개인</a></div></div>
+  <div class="field"><label>수업명 <span class="req">*</span></label><input class="input" name="name" placeholder="필라테스 초급" required></div>
+  <div class="row"><div class="field"><label>날짜 <span class="req">*</span></label><input class="input" name="date" type="date" value="2026-07-10" required></div><div class="field"><label>시간 <span class="req">*</span></label><input class="input" name="time" placeholder="10:00" required></div></div>
+  <div class="row"><div class="field"><label>정원 <span class="req">*</span></label><input class="input" name="capacity" type="number" inputmode="numeric" min="1" value="6" required></div><div class="field"><label>장소</label><input class="input" name="place" placeholder="스튜디오 A"></div></div>
+  <button class="btn" type="submit">등록</button></form></div>`+tabbar('timetable'); }
+function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="list-item"><span class="thumb"></span><span class="grow">${esc(m.name)}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}${rs.length?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석 체크</a>`:''}<div class="section-title">수업 접기</div><a class="btn ghost" data-del="${id}">폐강</a></div>`+tabbar('timetable'); }
+function vAttend(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('출석 체크','#/class/'+id)+`<div class="content"><div class="card"><b>${esc(c.name)}</b><div class="note" style="margin:0">${md(c.date)} ${c.time}</div></div><form id="fatt" data-class="${id}">${rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="card" data-mid="${r.memberId}"><b>${esc(m.name)}</b> ${up?'<span class="sub">'+esc(up.name)+' 잔여 '+up.remaining+'회</span>':'<span class="tag">결제 전</span>'}<div style="margin-top:6px"><span class="chip att on" data-r="present">출석</span><span class="chip att" data-r="absent">결석</span><span class="chip att" data-r="noshow">노쇼</span> <span class="chip trial" data-t="0">체험 아님</span></div></div>`;}).join('')}<button class="btn" type="submit">저장 (출석 시 자동 차감)</button></form></div>`+tabbar('timetable'); }
+function vPayment(mid){ const m=DB.members.find(x=>x.id===mid); if(!m) return vMembers(); if(!DB.passes.length) return hdr('결제','#/member/'+mid)+`<div class="content"><div class="empty">먼저 수강권을 등록하세요<br><a class="btn" href="#/passAdd" style="margin-top:10px">수강권 만들기</a></div></div>`+tabbar('members'); return hdr('결제 사항 등록','#/member/'+mid)+`<div class="content"><div class="card"><b>${esc(m.name)}</b></div><form id="fpay" data-mid="${mid}"><div class="field"><label>수강권 <span class="req">*</span></label><select class="input" name="passId" required>${DB.passes.map(p=>`<option value="${p.id}">${esc(p.name)} — ${won(p.price)}원</option>`).join('')}</select></div><div class="field"><label>결제 수단</label><div class="seg" id="method" data-v="현금"><a class="on" data-v="현금">현금</a><a data-v="계좌이체">계좌이체</a><a data-v="카드">카드</a><a data-v="미납">미납</a></div></div><div class="field"><label>개시 방식</label><div class="seg" id="start" data-v="first"><a class="on" data-v="first">첫 출석 시</a><a data-v="now">즉시</a></div></div><button class="btn" type="submit">결제 등록</button></form></div>`+tabbar('members'); }
+function vTuition(){ const unpaid=DB.payments.filter(p=>p.status==='unpaid'); const paid=DB.payments.filter(p=>p.status==='paid').slice().reverse(); return hdr('수강료','#/home')+`<div class="content"><div class="section-title">미납 ${unpaid.length}</div>${unpaid.length?unpaid.map(p=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<a class="list-item" href="#/member/${p.memberId}"><span class="thumb"></span><span class="grow">${esc(m.name)}<br><span class="sub">${esc(p.passName)} (${won(p.amount)}원)<br>기한 ${md(p.date)}</span></span><span class="badge">결제</span></a>`;}).join(''):'<div class="empty">미납 없음</div>'}<div class="section-title">최근 납부</div>${paid.length?paid.map(p=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow">${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}</div>`+tabbar('tuition'); }
+
+// ===== 회원 화면 =====
+function curMember(h){ const u=new URLSearchParams(location.search); const jid=u.get('join')||localStorage.getItem('myMemberId'); if(jid&&DB.members.find(m=>m.id===jid)){ localStorage.setItem('myMemberId',jid); return DB.members.find(m=>m.id===jid);} return null; }
+function vJoinMember(){
+  const u=new URLSearchParams(location.search); const jid=u.get('join');
+  const m=jid?DB.members.find(x=>x.id===jid):null;
+  if(m&&!m.joined){ return hdr('회원 가입')+`<div class="content"><div class="banner">${esc(m.name)}님, 환영합니다. 아래 정보를 확인·입력하면 가입 완료됩니다.</div><form id="fjoin" data-mid="${m.id}">
+    <div class="field"><label>이름</label><input class="input" name="name" value="${esc(m.name)}" required></div>
+    <div class="field"><label>생년월일 앞 6자리 <span class="req">*</span></label><input class="input" name="birth" inputmode="numeric" placeholder="950412" required></div>
+    <div class="field"><label>주소 <span class="req">*</span></label><input class="input" name="addr" required></div>
+    <div class="field"><label>휴대폰</label><input class="input" name="phone" value="${esc(m.phone)}" inputmode="tel" required></div>
+    <div class="banner">🔔 수강권 만료·수업 변경·납부 안내는 앱 알림으로 전달됩니다.</div>
+    <button class="btn" type="submit">가입 완료</button></form></div>`; }
+  if(m&&m.joined){ localStorage.setItem('myMemberId',m.id); location.hash='#/m/reserve'; return '<div class="content"><div class="empty">이동 중…</div></div>'; }
+  return hdr('회원')+`<div class="content"><div class="empty">강사에게 받은 초대 링크로 접속해주세요.</div></div>`;
+}
+function memberSwitcher(m){ return `<div class="note">${esc(m.name)}님 화면 · 스튜디오 ${CODE}</div>`; }
+function mClassBlock(c,m){ const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length; const mine=DB.reservations.find(r=>r.classId===c.id&&r.memberId===m.id&&r.status==='booked'); const full=rc>=c.capacity; const href=mine?'':' href="#/m/classdt/'+c.id+'"'; const style=mine?' style="border:2px solid #333"':''; return '<a class="classblock '+(c.category==='personal'?'personal':'')+'"'+href+style+'><span class="t">'+c.time+'</span> <span class="tag '+(c.category==='group'?'dark':'')+'">'+(c.category==='group'?'그룹':'개인')+'</span>'+(mine?' <b>✓ 내 예약</b>':'')+'<div class="n">'+esc(c.name)+'</div><div class="meta">예약 '+rc+'/'+c.capacity+(mine?' · 예약 완료':full?' · 마감':' · 예약 가능')+'</div></a>'; }
+function mReserve(m){ const cls=DB.classes.slice().sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1); const byDate={}; cls.forEach(c=>{(byDate[c.date]=byDate[c.date]||[]).push(c);}); const days=Object.keys(byDate).sort().map(d=>`<div class="section-title">${md(d)}${d===todayStr?' · 오늘':''}</div>`+byDate[d].map(c=>mClassBlock(c,m)).join('')).join(''); return hdr('수업 예약')+`<div class="content">${memberSwitcher(m)}${cls.length?days:'<div class="empty">예약 가능한 수업이 없습니다</div>'}</div>`+mtab('reserve'); }
+function mClassReserve(m,cid){ const c=DB.classes.find(x=>x.id===cid); if(!c) return mReserve(m); const up=usablePass(m.id,c.category); const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length; const full=rc>=c.capacity; return hdr('수업 상세','#/m/reserve')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}<br>예약 ${rc}/${c.capacity}</div></div><div class="section-title">사용할 수강권</div>${up?`<div class="card" style="border:2px solid #333">◉ <b>${esc(up.name)}</b><div class="note" style="margin:0">잔여 ${up.remaining}회 · 출석 시 1회 차감</div></div>`:'<div class="empty">사용 가능한 수강권이 없습니다. 강사에게 결제를 등록받으세요.</div>'}${full?'<div class="empty">정원 마감</div>':`<a class="btn" data-book="${c.id}">예약하기</a>`}<div class="card" style="padding:10px;margin-top:12px"><div class="note" style="margin:0"><b>취소 정책</b><br>수업 24시간 전까지 취소 시 차감되지 않습니다.</div></div></div>`+mtab('reserve'); }
+function mPass(m){ const ps=memberPasses(m.id); return hdr('수강권')+`<div class="content">${memberSwitcher(m)}${ps.length?ps.map(p=>{const used=p.total-p.remaining;const pct=p.total?Math.round(used/p.total*100):0;return `<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':'만료'}</span>${p.status==='pending'?'<div class="note" style="margin:6px 0 0">개시 전 — 첫 출석부터 시작</div>':`<div class="note" style="margin:6px 0">잔여 <b>${p.remaining}회</b> / 총 ${p.total}회 · ~${md(p.expire)}</div><div class="prog"><div style="width:${100-pct}%"></div></div>`}</div>`;}).join(''):'<div class="empty">보유한 수강권이 없습니다</div>'}</div>`+mtab('pass'); }
+function mUsage(m){ const atts=DB.attendance.filter(a=>a.memberId===m.id).slice().reverse(); const pays=DB.payments.filter(p=>p.memberId===m.id&&p.status==='paid').slice().reverse(); return hdr('이용내역')+`<div class="content">${memberSwitcher(m)}<div class="section-title">출석 · 차감</div>${atts.length?atts.map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${md(c.date)} ${c.time||''} · ${esc(c.name||'')}<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험 무료':a.deducted?' · 1회 차감':''}</span></span></div>`;}).join(''):'<div class="empty">이용내역이 없습니다</div>'}<div class="section-title">결제</div>${pays.length?pays.map(p=>`<div class="list-item"><span class="grow">${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span></div>`).join(''):'<div class="empty">없음</div>'}</div>`+mtab('usage'); }
+function mProfile(m){ return hdr('내 정보')+`<div class="content">${memberSwitcher(m)}<div class="card"><h3 style="font-size:16px">${esc(m.name)}</h3><div class="note" style="margin:0">${m.phone}${m.birth?' · '+m.birth:''}${m.addr?' · '+esc(m.addr):''}</div></div><div class="section-title">알림 설정</div><div class="note">앱 푸시 알림: 켜짐</div></div>`+mtab('profile'); }
+
+// ===== 이벤트 =====
+function wire(){
+  document.querySelectorAll('.seg[id]').forEach(seg=>seg.querySelectorAll('a').forEach(a=>a.onclick=e=>{e.preventDefault();seg.querySelectorAll('a').forEach(x=>x.classList.remove('on'));a.classList.add('on');seg.dataset.v=a.dataset.v;}));
+  document.querySelectorAll('.chip.att').forEach(ch=>ch.onclick=()=>{ch.parentElement.querySelectorAll('.chip.att').forEach(x=>x.classList.remove('on'));ch.classList.add('on');});
+  document.querySelectorAll('.chip.trial').forEach(ch=>ch.onclick=()=>{const on=ch.dataset.t==='1';ch.dataset.t=on?'0':'1';ch.classList.toggle('on',!on);ch.textContent=on?'체험 아님':'체험(무료)';});
+  const cs=document.getElementById('createStudio'); if(cs) cs.onclick=async()=>{ CODE=newCode(); localStorage.setItem('studioCode',CODE); const url=new URL(location.href); url.searchParams.set('s',CODE); history.replaceState(null,'',url); await ensureStudio(); subscribe(); toast('스튜디오 생성: '+CODE); };
+  const ci=document.getElementById('copyInvite'); if(ci) ci.onclick=()=>copy(location.origin+location.pathname+'?s='+CODE);
+  document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy));
+  const f=document.getElementById('f'); if(f) f.onsubmit=e=>{e.preventDefault();handleForm(location.hash,Object.fromEntries(new FormData(f)));};
+  const fpay=document.getElementById('fpay'); if(fpay) fpay.onsubmit=e=>{e.preventDefault();doPayment(fpay);};
+  const fatt=document.getElementById('fatt'); if(fatt) fatt.onsubmit=e=>{e.preventDefault();doAttend(fatt);};
+  const fjoin=document.getElementById('fjoin'); if(fjoin) fjoin.onsubmit=e=>{e.preventDefault();doJoin(fjoin);};
+  document.querySelectorAll('[data-book]').forEach(b=>b.onclick=()=>doBook(b.dataset.book));
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>doClose(b.dataset.del));
+}
+function copy(t){ navigator.clipboard?.writeText(t).then(()=>toast('복사됨 — 카톡에 붙여넣어 전송하세요'),()=>toast(t)); }
+async function handleForm(hash,d){
+  if(hash.startsWith('#/passAdd')){ const cat=document.getElementById('cat').dataset.v; DB.passes.push({id:uid(),category:cat,scope:'all',scopeCat:cat==='group'?'그룹':'개인',name:d.name,count:+d.count,months:+d.months,price:+d.price}); await saveDB(); toast('수강권 등록'); go('#/passes'); }
+  else if(hash.startsWith('#/memberAdd')){ const id=uid(); DB.members.push({id,name:d.name,phone:d.phone,joined:false}); await saveDB(); toast('회원 등록 · 초대 링크 생성'); go('#/member/'+id); }
+  else if(hash.startsWith('#/classAdd')){ const cat=document.getElementById('cat').dataset.v; DB.classes.push({id:uid(),category:cat,name:d.name,date:d.date,time:d.time,capacity:cat==='personal'?1:+d.capacity,place:d.place}); await saveDB(); toast('수업 등록'); go('#/timetable'); }
+}
+async function doJoin(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f)); const m=DB.members.find(x=>x.id===mid); if(m){ m.name=d.name; m.phone=d.phone; m.birth=d.birth; m.addr=d.addr; m.joined=true; localStorage.setItem('myMemberId',mid); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); } }
+async function doPayment(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f)); const method=document.getElementById('method').dataset.v; const startMode=document.getElementById('start').dataset.v; const pass=DB.passes.find(p=>p.id===d.passId); if(!pass) return; const unpaid=method==='미납'; DB.payments.push({id:uid(),memberId:mid,passId:pass.id,passName:pass.name,method:unpaid?'-':method,amount:pass.price,date:unpaid?addDays(todayStr,5):todayStr,status:unpaid?'unpaid':'paid'});
+  if(!unpaid){ const start=startMode==='now'?todayStr:null; const mp={id:uid(),memberId:mid,passId:pass.id,name:pass.name,scope:pass.scope,scopeCat:pass.scopeCat,total:pass.count,remaining:pass.count,status:start?'active':'pending',start:start,expire:start?addMonths(start,pass.months):null,months:pass.months}; const pend=DB.attendance.filter(a=>a.memberId===mid&&a.pending&&!a.trial); if(pend.length){ mp.status='active'; mp.start=pend[0].date; mp.expire=addMonths(pend[0].date,pass.months); pend.forEach(a=>{ if(mp.remaining>0){mp.remaining--; a.deducted=true; a.pending=false;} }); } DB.mpasses.push(mp); await saveDB(); toast(pend.length?`납부 완료 · 출석 ${pend.length}건 소급 차감 → 잔여 ${mp.remaining}회`:'납부 완료 · 수강권 발급'); }
+  else { await saveDB(); toast('미납 등록'); }
+  go('#/member/'+mid);
+}
+async function doAttend(f){ const cid=f.dataset.class; const c=DB.classes.find(x=>x.id===cid); f.querySelectorAll('[data-mid]').forEach(card=>{ const mid=card.dataset.mid; const on=card.querySelector('.chip.att.on'); const result=on?on.dataset.r:'present'; const trial=card.querySelector('.chip.trial').dataset.t==='1'; let deducted=false,pending=false; if((result==='present'||result==='noshow')&&!trial){ const up=usablePass(mid,c.category); if(up){up.remaining--;deducted=true;} else pending=true; } DB.attendance.push({id:uid(),classId:cid,memberId:mid,result,trial,deducted,pending,date:c.date}); const r=DB.reservations.find(x=>x.classId===cid&&x.memberId===mid&&x.status==='booked'); if(r) r.status='done'; }); await saveDB(); toast('출석 저장 · 자동 차감'); go('#/class/'+cid); }
+async function doBook(cid){ const m=curMember(); const c=DB.classes.find(x=>x.id===cid); const rc=DB.reservations.filter(r=>r.classId===cid&&r.status==='booked').length; if(rc>=c.capacity){toast('마감');return;} if(DB.reservations.find(r=>r.classId===cid&&r.memberId===m.id&&r.status==='booked')){toast('이미 예약함');return;} DB.reservations.push({id:uid(),classId:cid,memberId:m.id,status:'booked'}); await saveDB(); toast('예약 완료 · 강사 폰에 반영'); go('#/m/reserve'); }
+async function doClose(cid){ if(!confirm('폐강할까요?')) return; DB.reservations.filter(r=>r.classId===cid&&r.status==='booked').forEach(r=>r.status='cancelled'); DB.classes=DB.classes.filter(c=>c.id!==cid); await saveDB(); toast('폐강'); go('#/timetable'); }
+
+// ===== 시작 =====
+window.curMember=curMember; // for doBook
+(async()=>{ if(CODE){ await ensureStudio(); subscribe(); } else { ready=true; if(!location.hash) location.hash='#/home'; render(); } })();
+</script>
+</body>
+</html>
