@@ -167,9 +167,8 @@ function vHome(){
   const unpaid=DB.payments.filter(p=>p.status==='unpaid').length;
   const expSoon=DB.members.filter(m=>memberStatus(m.id)==='만료 예정').length;
   const guide=(DB.passes.length===0||DB.members.length===0||DB.classes.length===0);
-  const invite=location.origin+location.pathname+'?s='+CODE+'&join=new';
   return hdr('내 스튜디오')+`<div class="content">
-    <div class="banner"><b>공통 초대 링크</b> (단톡방에 뿌리면 여러 명이 각자 가입) · 스튜디오 코드 ${CODE}<div class="codebox" style="font-size:12px;letter-spacing:0;word-break:break-all">${invite}</div><a class="btn ghost" id="copyInvite">공통 초대 링크 복사</a><div class="hint" style="margin-top:6px">특정 회원만 콕 집어 초대하려면 → 회원 탭에서 등록 후 '개별 초대 링크' 사용</div></div>
+    <div class="note">스튜디오 ${CODE} · 회원 초대 링크는 [더보기] 탭에 있습니다</div>
     <div class="row" style="margin-bottom:12px">
       <a class="card" href="#/tuition" style="text-align:center;margin:0;text-decoration:none;color:#222"><div style="font-size:22px;font-weight:800">${unpaid}</div><div class="sub">미납</div></a>
       <a class="card" href="#/members" style="text-align:center;margin:0;text-decoration:none;color:#222"><div style="font-size:22px;font-weight:800">${expSoon}</div><div class="sub">만료 예정</div></a>
@@ -184,7 +183,10 @@ function vHome(){
   </div>`+tabbar('home');
 }
 function classBlock(c){ const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length; return `<a class="classblock ${c.category==='personal'?'personal':''}" href="#/class/${c.id}"><span class="t">${c.time}</span> <span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><div class="n">${esc(c.name)}</div><div class="meta">예약 ${rc}/${c.capacity}${rc>=c.capacity?' · 마감':' · 잔여 '+(c.capacity-rc)}</div></a>`; }
-function vPasses(){ return hdr('수강권 관리','#/home')+`<div class="content">${DB.passes.length?DB.passes.map(p=>`<div class="card"><span style="float:right;font-size:11px"><a href="#/passEdit/${p.id}" style="color:#888;text-decoration:underline">수정</a> · <a data-delproduct="${p.id}" style="color:#888;text-decoration:underline">삭제</a></span><span class="tag ${p.category==='group'?'dark':''}">${p.category==='group'?'그룹':'개인'}</span> <b>${esc(p.name)}</b><div class="note" style="margin:0">${won(p.price)}원 · 유효 ${p.months}개월 · 회당 ${won(Math.round(p.price/p.count))}원 · ${p.scope==='all'?'전체 수업':'특정 수업'}</div></div>`).join(''):'<div class="empty">등록된 수강권이 없습니다</div>'}<a class="btn" href="#/passAdd" style="margin-top:12px">＋ 수강권 추가</a></div>`+tabbar('passes'); }
+function vPasses(){ return hdr('수강권 관리','#/home')+`<div class="content">${DB.passes.length?DB.passes.map(p=>`<div class="card"><span style="float:right;font-size:11px"><a href="#/passEdit/${p.id}" style="color:#888;text-decoration:underline">수정</a> · <a data-delproduct="${p.id}" style="color:#888;text-decoration:underline">삭제</a></span><span class="tag ${p.category==='group'?'dark':''}">${p.category==='group'?'그룹':'개인'}</span> <b>${esc(p.name)}</b><div class="note" style="margin:0">${won(p.price)}원 · 유효 ${p.months}개월 · 회당 ${won(Math.round(p.price/p.count))}원 · ${p.scope==='all'?'전체 수업':'특정 수업'}</div></div>`).join(''):'<div class="empty">등록된 수강권이 없습니다</div>'}<a class="btn" href="#/passAdd" style="margin-top:12px">＋ 수강권 추가</a>
+<div class="section-title">회원 초대</div>
+<div class="banner"><b>공통 초대 링크</b> — 단톡방·카톡에 뿌리면 여러 명이 각자 가입합니다 (스튜디오 코드 ${CODE})<div class="codebox" style="font-size:12px;letter-spacing:0;word-break:break-all">${location.origin+location.pathname+'?s='+CODE+'&join=new'}</div><a class="btn ghost" id="copyInvite" style="margin-top:6px">공통 초대 링크 복사</a><div class="hint" style="margin-top:6px">특정 회원만 콕 집어 초대하려면 → 회원 탭에서 등록 후 회원 상세의 '개별 초대 링크' 사용</div></div>
+</div>`+tabbar('passes'); }
 function vPassEdit(id){ const p=DB.passes.find(x=>x.id===id); if(!p) return vPasses();
   return hdr('수강권 수정','#/passes')+`<div class="content">
   <div class="note">수정 내용은 <b>앞으로의 결제 등록부터</b> 적용됩니다. 이미 판매된 회원 보유분은 구매 당시 조건이 유지됩니다.</div>
