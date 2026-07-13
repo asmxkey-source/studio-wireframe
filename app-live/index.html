@@ -182,7 +182,7 @@ function vHome(){
   </div>`+tabbar('home');
 }
 function classBlock(c){ const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length; return `<a class="classblock ${c.category==='personal'?'personal':''}" href="#/class/${c.id}"><span class="t">${c.time}</span> <span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><div class="n">${esc(c.name)}</div><div class="meta">예약 ${rc}/${c.capacity}${rc>=c.capacity?' · 마감':' · 잔여 '+(c.capacity-rc)}</div></a>`; }
-function vPasses(){ return hdr('수강권 관리','#/home')+`<div class="content">${DB.passes.length?DB.passes.map(p=>`<div class="card"><span class="tag ${p.category==='group'?'dark':''}">${p.category==='group'?'그룹':'개인'}</span> <b>${esc(p.name)}</b><div class="note" style="margin:0">${won(p.price)}원 · 유효 ${p.months}개월 · 회당 ${won(Math.round(p.price/p.count))}원 · ${p.scope==='all'?'전체 수업':'특정 수업'}</div></div>`).join(''):'<div class="empty">등록된 수강권이 없습니다</div>'}<a class="btn" href="#/passAdd" style="margin-top:12px">＋ 수강권 추가</a></div>`+tabbar('passes'); }
+function vPasses(){ return hdr('수강권 관리','#/home')+`<div class="content">${DB.passes.length?DB.passes.map(p=>`<div class="card"><span class="tag ${p.category==='group'?'dark':''}">${p.category==='group'?'그룹':'개인'}</span> <b>${esc(p.name)}</b><a data-delproduct="${p.id}" style="float:right;font-size:11px;color:#888;text-decoration:underline">삭제</a><div class="note" style="margin:0">${won(p.price)}원 · 유효 ${p.months}개월 · 회당 ${won(Math.round(p.price/p.count))}원 · ${p.scope==='all'?'전체 수업':'특정 수업'}</div></div>`).join(''):'<div class="empty">등록된 수강권이 없습니다</div>'}<a class="btn" href="#/passAdd" style="margin-top:12px">＋ 수강권 추가</a></div>`+tabbar('passes'); }
 function vPassAdd(){ return hdr('수강권 추가','#/passes')+`<div class="content"><form id="f">
   <div class="field"><label>카테고리</label><div class="seg" id="cat" data-v="group"><a class="on" data-v="group">그룹</a><a data-v="personal">개인</a></div></div>
   <div class="field"><label>수강권명 <span class="req">*</span></label><input class="input" name="name" placeholder="예: 그룹 10회권" required></div>
@@ -267,8 +267,8 @@ function vClassAdd(){
   const opts=DB.passes.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.category==='group'?'그룹':'개인'})</option>`).join('');
   return hdr('수업 등록','#/timetable')+`<div class="content"><form id="fclass">
   <div class="field"><label>강의 선택 <span class="req">*</span></label>
-    <select class="input" id="clsPass" name="passId">${opts}<option value="custom">＋ 직접 입력 (수강권 없이 · 체험 등)</option></select>
-    <div class="hint">'수강권 관리'에서 등록한 강의가 자동으로 표시됩니다. 고르면 카테고리·수업명이 자동 입력돼요.</div>
+    <select class="input" id="clsPass" name="passId">${opts}<option value="custom">＋ 직접 입력 (교차 수강용 수업 · 체험 등)</option></select>
+    <div class="hint">수강권과 수업명이 같으면 → 위에서 선택(자동 입력). 20회권처럼 여러 수업에 두루 쓰는 수강권이면 → '직접 입력'으로 수업명을 각각 등록하세요. 어느 쪽이든 예약·차감은 동일하게 작동합니다.</div>
   </div>
   <div id="customBlock" style="display:none">
     <div class="field"><label>카테고리</label><div class="seg" id="cat" data-v="group"><a class="on" data-v="group">그룹</a><a data-v="personal">개인</a></div></div>
@@ -376,7 +376,18 @@ function wire(){
   document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>doClose(b.dataset.del,b.dataset.scope||'one'));
   document.querySelectorAll('[data-delpay]').forEach(b=>b.onclick=()=>doDelPay(b.dataset.delpay));
   document.querySelectorAll('[data-delpass]').forEach(b=>b.onclick=()=>doDelPass(b.dataset.delpass));
+  document.querySelectorAll('[data-delproduct]').forEach(b=>b.onclick=()=>doDelProduct(b.dataset.delproduct));
 }
+async function doDelProduct(id){ const p=DB.passes.find(x=>x.id===id); if(!p) return;
+  const sold=DB.mpasses.filter(x=>x.passId===id).length;
+  const linked=DB.classes.filter(c=>c.passId===id).length;
+  let msg=`'${p.name}' 수강권을 삭제할까요?`;
+  if(sold) msg+=`\n· 이미 판매된 ${sold}건(회원 보유분)은 그대로 유지됩니다.`;
+  if(linked) msg+=`\n· 이 강의로 등록된 수업 ${linked}개도 그대로 유지됩니다.`;
+  msg+='\n삭제 후에는 새 결제·수업 등록 목록에서만 사라집니다.';
+  if(!confirm(msg)) return;
+  DB.passes=DB.passes.filter(x=>x.id!==id);
+  await saveDB(); toast('수강권 삭제됨'); render(); }
 function copy(t){ navigator.clipboard?.writeText(t).then(()=>toast('복사됨 — 카톡에 붙여넣어 전송하세요'),()=>toast(t)); }
 async function handleForm(hash,d){
   if(hash.startsWith('#/passAdd')){ const cat=document.getElementById('cat').dataset.v; const price=+String(d.price).replace(/[^0-9]/g,''); DB.passes.push({id:uid(),category:cat,scope:'all',scopeCat:cat==='group'?'그룹':'개인',name:d.name,count:+d.count,months:+d.months,price}); await saveDB(); toast('수강권 등록'); go('#/passes'); }
