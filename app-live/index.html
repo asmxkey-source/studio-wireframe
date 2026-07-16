@@ -261,7 +261,7 @@ function vTimetable(){
   const seg=`<div class="seg" id="ttseg"><a class="${view==='week'?'on':''}" data-v="week">주간</a><a class="${view==='month'?'on':''}" data-v="month">월간</a></div>
   <div class="note" style="margin-top:-4px">※ 주간/월간 선택은 마지막 상태로 저장됨 (다시 열어도 유지)</div>`;
   const body = view==='week'? ttWeekBody(classBlock,'예약 불가') : ttMonth();
-  return hdr('시간표')+`<div class="content">${guideCards()}${seg}${ttNav(ttLabel())}${body}</div>`+tabbar('timetable');
+  return hdr('시간표')+`<div class="content">${guideCards()}<a class="btn ghost" href="#/members">👥 회원 예약 추가</a>${seg}${ttNav(ttLabel())}${body}</div>`+tabbar('timetable');
 }
 function ttMonth(){
   const mk=monthKey(TT.ref); const [y,mo]=mk.split('-').map(Number);
