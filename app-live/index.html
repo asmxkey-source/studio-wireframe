@@ -295,7 +295,7 @@ function vClassEdit(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vT
   <button class="btn" type="submit">저장</button></form></div>`+tabbar('timetable');
 }
 function vClassAdd(){
-  const opts=DB.passes.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.category==='group'?'그룹':'개인'})</option>`).join('');
+  const opts=DB.passes.map(p=>`<option value="${p.id}">(${p.category==='group'?'그룹':'개인'}) ${esc(p.name)}</option>`).join('');
   return hdr('수업 등록','#/timetable')+`<div class="content"><form id="fclass">
   <div class="field"><label>강의 선택 <span class="req">*</span></label>
     <select class="input" id="clsPass" name="passId">${opts}<option value="custom">＋ 직접 입력 (교차 수강용 수업 · 체험 등)</option></select>
