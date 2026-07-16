@@ -357,7 +357,7 @@ function vTuition(){
   <div class="section-title">미납 ${unpaid.length}</div>
   ${unpaid.length?unpaid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<a class="list-item" href="#/member/${p.memberId}"><span class="thumb"></span><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${esc(p.passName)} (${won(p.amount)}원)<br>기한 ${md(p.date)}</span></span><span class="badge">결제</span></a>`;}).join(''):'<div class="empty">미납 없음</div>'}
   <div class="section-title">최근 납부 ${paid.length}</div>
-  ${paid.length?paid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}
+  ${paid.length?paid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`;}).join(''):'<div class="empty">없음</div>'}
   </div>`+tabbar('tuition'); }
 
 // ===== 회원 화면 =====
@@ -639,7 +639,7 @@ async function doDelPay(id){ const p=DB.payments.find(x=>x.id===id); if(!p) retu
   if(!confirm('이 결제 기록을 삭제할까요?'+(p.mpId?' 연결된 수강권도 함께 삭제됩니다.':''))) return;
   DB.payments=DB.payments.filter(x=>x.id!==id);
   if(p.mpId) DB.mpasses=DB.mpasses.filter(x=>x.id!==p.mpId);
-  await saveDB(); toast('결제 기록 삭제'); go('#/member/'+p.memberId); }
+  await saveDB(); toast('결제 기록 삭제'); render(); }
 async function doDelPass(id){ const p=DB.mpasses.find(x=>x.id===id); if(!p) return;
   if(!confirm('이 수강권을 삭제할까요? (이미 차감된 출석 기록은 남습니다)')) return;
   DB.mpasses=DB.mpasses.filter(x=>x.id!==id);
