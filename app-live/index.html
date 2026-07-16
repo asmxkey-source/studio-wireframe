@@ -302,7 +302,7 @@ function vClassAdd(){
   const opts=DB.passes.map(p=>`<option value="${p.id}">(${p.category==='group'?'그룹':'개인'}) ${esc(p.name)}</option>`).join('');
   return hdr('수업 등록','#/timetable')+`<div class="content"><form id="fclass">
   <div class="field"><label>강의 선택 <span class="req">*</span></label>
-    <select class="input" id="clsPass" name="passId">${opts}<option value="custom">＋ 직접 입력 (교차 수강용 수업 · 체험 등)</option></select>
+    <span style="position:relative;display:block"><select class="input" id="clsPass" name="passId" style="width:100%;appearance:none;-webkit-appearance:none;padding-right:28px">${opts}<option value="custom">＋ 직접 입력 (교차 수강용 수업 · 체험 등)</option></select><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:#666">▼</span></span>
     <div class="hint">수강권과 수업명이 같으면 → 위에서 선택(자동 입력). 20회권처럼 여러 수업에 두루 쓰는 수강권이면 → '직접 입력'으로 수업명을 각각 등록하세요. 어느 쪽이든 예약·차감은 동일하게 작동합니다.</div>
   </div>
   <div id="customBlock" style="display:none">
