@@ -310,11 +310,11 @@ function vClassAdd(){
   <div class="field"><label>반복</label><div class="seg" id="rep" data-v="none"><a class="on" data-v="none">반복 안 함</a><a data-v="weekly">매주 반복</a></div></div>
   <div id="repBlock" style="display:none">
     <div class="field"><label>반복 요일 (다중 선택)</label><div id="wdays">${['월','화','수','목','금','토','일'].map((w,i)=>`<span class="chip wd" data-d="${(i+1)%7}">${w}</span>`).join('')}</div></div>
-    <div class="field"><label>이 수업, 언제까지 계속 열어둘까요?</label>
+    <div class="field"><label>이 수업, 언제까지 열어둘까요?</label>
       <div class="seg vertical" id="endmode" data-v="cont">
-        <a class="on" data-v="cont"><b>계속 운영</b><span class="sub">종료 없이 매주 계속 엽니다 (가장 흔함)</span></a>
-        <a data-v="until"><b>특정 날짜까지만</b><span class="sub">그 날짜 이후엔 자동으로 안 열립니다</span></a>
-        <a data-v="count"><b>정해진 횟수만</b><span class="sub">N회 열고 자동 종료 (8주 과정 등)</span></a>
+        <a class="on" data-v="cont"><b>계속 운영</b><span class="sub">종료 없이 매주 계속 운영</span></a>
+        <a data-v="until"><b>특정 날짜까지만</b><span class="sub">그 날짜 이후엔 수업 자체가 자동으로 안 열립니다 (회원 수강권과 무관)</span></a>
+        <a data-v="count"><b>정해진 횟수만</b><span class="sub">수업 회차를 N개만 만들고 종료 — 8주 과정처럼 강좌 자체가 끝나는 경우 (회원 수강권 횟수와는 다른 개념)</span></a>
       </div>
     </div>
     <div class="field" id="endUntilF" style="display:none"><label>종료 날짜</label><input class="input" id="endUntil" type="date"></div>
