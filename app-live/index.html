@@ -153,7 +153,7 @@ function render(){
   const seg=h.replace('#/','').split('/')[0]; const arg=h.replace('#/','').split('/')[1];
   let html='';
   if(isMb){ const m=curMember(h); const mseg=h.replace('#/m/','').split('/')[0]; const marg=h.replace('#/m/','').split('/')[1]; html=(m&&!m.joined)?vJoinMember():(m?({reserve:mReserve,classdt:mClassReserve,pass:mPass,usage:mUsage,profile:mProfile}[mseg]||mReserve)(m,marg):vJoinMember()); }
-  else { html=({home:vTimetable,passes:vPasses,passAdd:vPassAdd,passEdit:()=>vPassEdit(arg),members:vMembers,memberAdd:vMemberAdd,member:()=>vMemberDetail(arg),timetable:vTimetable,classAdd:vClassAdd,class:()=>vClassDetail(arg),classEdit:()=>vClassEdit(arg),attend:()=>vAttend(arg),payment:()=>vPayment(arg),tuition:vTuition,blockAdd:vBlockAdd,bookSelect:vBookSelect,bookFor:vBookFor}[seg]||vTimetable)(); }
+  else { html=({home:vTimetable,passes:vPasses,passAdd:vPassAdd,passEdit:()=>vPassEdit(arg),members:vMembers,memberAdd:vMemberAdd,member:()=>vMemberDetail(arg),timetable:vTimetable,classAdd:vClassAdd,class:()=>vClassDetail(arg),classEdit:()=>vClassEdit(arg),attend:()=>vAttend(arg),payment:()=>vPayment(arg),refund:()=>vRefund(arg),tuition:vTuition,blockAdd:vBlockAdd,bookSelect:vBookSelect,bookFor:vBookFor}[seg]||vTimetable)(); }
   document.getElementById('app').innerHTML='<div class="phone">'+html+'</div>'; wire();
 }
 
@@ -238,9 +238,9 @@ function vMemberDetail(id){ const m=DB.members.find(x=>x.id===id); if(!m) return
   return hdr('회원 상세','#/members')+`<div class="content">
   <div class="card"><h3 style="font-size:16px">${esc(m.name)} <span class="tag">${memberStatus(id)}</span></h3><div class="note" style="margin:0">${m.phone}</div></div>
   <a class="btn" href="#/payment/${id}">💳 결제 사항 등록</a>
-  <div class="section-title">보유 수강권</div>${ps.length?ps.map(p=>`<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':'만료'}</span><a data-delpass="${p.id}" style="float:right;font-size:11px;color:#888;text-decoration:underline">삭제</a><div class="note" style="margin:0">${p.status==='pending'?'개시 전':'잔여 '+p.remaining+'/'+p.total+'회 · ~'+md(p.expire)}</div></div>`).join(''):'<div class="empty">없음</div>'}
+  <div class="section-title">보유 수강권</div>${ps.length?ps.map(p=>`<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':p.status==='refunded'?'환불됨':'만료'}</span><span style="float:right;font-size:11px">${(p.status==='active'||p.status==='pending')?`<a href="#/refund/${p.id}" style="color:#888;text-decoration:underline">환불</a> · `:''}<a data-delpass="${p.id}" style="color:#888;text-decoration:underline">삭제</a></span><div class="note" style="margin:0">${p.status==='pending'?'개시 전':p.status==='refunded'?'환불 처리됨 · 사용 '+(p.total-p.remaining)+'회/총 '+p.total+'회':'잔여 '+p.remaining+'/'+p.total+'회 · ~'+md(p.expire)}</div></div>`).join(''):'<div class="empty">없음</div>'}
   <div class="section-title">출석 이력</div>${atts.length?atts.slice().reverse().map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${esc(c.name||'수업')}(${dateLabel(c.date||a.date)}, ${c.time||''})<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험':a.deducted?' · 1회 차감':''}</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}
-  <div class="section-title">결제 이력</div>${pays.length?pays.slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1).map(p=>`<div class="list-item"><span class="grow">${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.status==='unpaid'?'미납 · 기한 '+md(p.date):p.method+' ('+md(p.date)+')'}</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`).join(''):'<div class="empty">없음</div>'}
+  <div class="section-title">결제 이력</div>${pays.length?pays.slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1).map(p=>`<div class="list-item"><span class="grow">${esc(p.passName)} (${p.status==='refund'?`<span style="color:#b00">−${won(p.amount)}원</span>`:won(p.amount)+'원'})<br><span class="sub">${p.status==='unpaid'?'미납 · 기한 '+md(p.date):p.status==='refund'?'환불 ('+md(p.date)+')':p.method+' ('+md(p.date)+')'}</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`).join(''):'<div class="empty">없음</div>'}
   <a class="btn ghost" data-delmember="${id}" style="margin-top:16px">🗑 회원 삭제 (잘못 등록한 경우)</a>
   ${m.joined?'':`<div class="banner" style="margin-top:12px">아직 가입 전입니다. 아래 초대 링크를 카톡으로 보내세요.<div class="codebox" style="font-size:11px;letter-spacing:0;word-break:break-all">${invite}</div><a class="btn ghost" data-copy="${esc(invite)}">이 회원 초대 링크 복사</a></div>`}
   </div>`+tabbar('members'); }
@@ -339,16 +339,35 @@ ${(()=>{ const holds=mid=>!c.passId||DB.mpasses.some(p=>p.memberId===mid&&p.pass
 ${hasBooked?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석 체크</a>`:''}${c.seriesId?'<div class="note" style="margin-top:8px">🔁 매주 반복 수업</div>':''}<a class="btn ghost" href="#/classEdit/${id}" style="margin-top:12px">수업 정보 수정</a><div class="section-title">폐강 처리</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">삭제</a>`}</div>`+tabbar('timetable'); }
 function vAttend(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('출석 체크','#/class/'+id)+`<div class="content"><div class="card"><b>${esc(c.name)}</b><div class="note" style="margin:0">${md(c.date)} ${c.time}</div></div><form id="fatt" data-class="${id}">${rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);const pp=up?null:pendingPass(r.memberId,c.category);return `<div class="card" data-mid="${r.memberId}"><b>${esc(m.name)}</b> ${up?'<span class="sub">'+esc(up.name)+' 잔여 '+up.remaining+'회</span>':pp?'<span class="sub">'+esc(pp.name)+' 개시 대기 — 출석 시 개시·차감</span>':'<span class="tag">결제 전</span>'}<div style="margin-top:6px"><span class="chip att on" data-r="present">출석</span><span class="chip att" data-r="absent">결석</span><span class="chip att" data-r="noshow">노쇼</span> <span class="chip trial" data-t="0">체험 아님</span></div></div>`;}).join('')}<button class="btn" type="submit">저장 (출석 시 자동 차감)</button></form></div>`+tabbar('timetable'); }
 function vPayment(mid){ const m=DB.members.find(x=>x.id===mid); if(!m) return vMembers(); if(!DB.passes.length) return hdr('결제','#/member/'+mid)+`<div class="content"><div class="empty">먼저 수강권을 등록하세요<br><a class="btn" href="#/passAdd" style="margin-top:10px">수강권 만들기</a></div></div>`+tabbar('members'); return hdr('결제 사항 등록','#/member/'+mid)+`<div class="content"><div class="card"><b>${esc(m.name)}</b></div><form id="fpay" data-mid="${mid}"><div class="field"><label>수강권 <span class="req">*</span></label><select class="input" name="passId" required>${DB.passes.map(p=>`<option value="${p.id}">${esc(p.name)} — ${won(p.price)}원</option>`).join('')}</select></div><div class="field"><label>결제 수단</label><div class="seg" id="method" data-v="현금"><a class="on" data-v="현금">현금</a><a data-v="계좌이체">계좌이체</a><a data-v="카드">카드</a><a data-v="미납">미납</a></div></div><div class="field"><label id="payDateLb">납부일</label><input class="input" name="paidDate" id="payDate" type="date" value="${todayStr}"><div class="hint" id="payDateHint">실제로 돈을 받은 날짜 — '수강료' 탭의 최근 납부에 이 날짜로 표시됩니다</div></div><div class="field"><label>개시 방식 <span style="font-weight:400;color:#888;font-size:11px">— 유효기간을 언제부터 셀까</span></label><div class="seg" id="start" data-v="first"><a class="on" data-v="first">첫 출석 시</a><a data-v="date">시작일 지정</a></div><div class="hint">· <b>첫 출석 시</b>(권장): 결제해도 기간이 안 흐르고, 처음 출석한 날부터 유효기간 시작 — 미리 결제한 회원이 손해 안 봄<br>· <b>시작일 지정</b>: 지정한 날짜부터 유효기간 시작 — 시작 날짜를 정해두고 다니는 회원 (납부일과 별개)</div></div><div class="field" id="startDateF" style="display:none"><label>시작일</label><input class="input" name="startDate" type="date" value="${todayStr}"></div><button class="btn" type="submit">결제 등록</button></form></div>`+tabbar('members'); }
+function vRefund(mpId){ const p=DB.mpasses.find(x=>x.id===mpId); if(!p||p.status==='refunded') return vMembers(); const m=DB.members.find(x=>x.id===p.memberId)||{};
+  const pay=DB.payments.find(x=>x.mpId===mpId&&x.status==='paid');
+  const price=pay?+pay.amount:((DB.passes.find(x=>x.id===p.passId)||{}).price||0);
+  const used=p.total-p.remaining; const per=p.total?Math.round(price/p.total):0;
+  const penalty=Math.round(price*0.1); const rec=Math.max(0,price-used*per-penalty);
+  const futRes=DB.reservations.filter(r=>r.memberId===p.memberId&&r.status==='booked'&&((DB.classes.find(c=>c.id===r.classId)||{}).date||'')>=todayStr).length;
+  return hdr('환불 처리','#/member/'+p.memberId)+`<div class="content">
+  <div class="card"><b>${esc(m.name)}</b> · ${esc(p.name)}<div class="note" style="margin:4px 0 0">결제액 ${won(price)}원 · 사용 ${used}회 / 총 ${p.total}회</div></div>
+  <div class="card"><b>환불 권고액 계산</b> <span class="sub" style="font-weight:400">(소비자분쟁해결기준 방식)</span>
+    <div class="note" style="margin:6px 0 0">결제액 ${won(price)}원<br>− 사용분 ${used}회 × 회당 ${won(per)}원 = ${won(used*per)}원<br>− 위약금 10% = ${won(penalty)}원<br><b>= 권고 환불액 ${won(rec)}원</b></div>
+  </div>
+  <form id="frefund" data-mp="${mpId}">
+    <div class="field"><label>최종 환불액(원) <span class="req">*</span></label><input class="input money" name="amount" type="text" inputmode="numeric" value="${won(rec)}" required><div class="hint">권고액은 참고용 — 회원과 협의한 금액으로 수정해서 확정하세요</div></div>
+    <div class="field"><label>환불일</label><input class="input" name="date" type="date" value="${todayStr}"></div>
+    <div class="hint">확정하면 이 수강권은 '환불됨' 처리되어 예약·차감에 쓸 수 없게 되고, ${futRes?`이 회원의 다가올 예약 ${futRes}건이 자동 취소됩니다.`:'취소할 다가올 예약은 없습니다.'} 지난 출석 기록은 남습니다.</div>
+    <button class="btn" type="submit">환불 확정</button>
+  </form></div>`+tabbar('members'); }
 function vTuition(){
   const unpaid=DB.payments.filter(p=>p.status==='unpaid');
   const paid=DB.payments.filter(p=>p.status==='paid').slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1);
+  const refunds=DB.payments.filter(p=>p.status==='refund').slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1);
+  const refSum=refunds.reduce((s,p)=>s+(+p.amount||0),0);
   const paidSum=paid.reduce((s,p)=>s+(+p.amount||0),0);
   const unpaidSum=unpaid.reduce((s,p)=>s+(+p.amount||0),0);
   const tot=paidSum+unpaidSum; const pct=tot?Math.round(paidSum/tot*100):0;
   const expM=DB.members.filter(m=>memberStatus(m.id)==='만료 예정');
   return hdr('수강료')+`<div class="content">
   <div class="card"><b>수강료 요약</b>
-    <div class="note" style="margin:6px 0 4px">납부 <b>${won(paidSum)}원</b> (${paid.length}건) · 미납 <b>${won(unpaidSum)}원</b> (${unpaid.length}건)</div>
+    <div class="note" style="margin:6px 0 4px">납부 <b>${won(paidSum)}원</b> (${paid.length}건) · 미납 <b>${won(unpaidSum)}원</b> (${unpaid.length}건)${refunds.length?` · 환불 <b>−${won(refSum)}원</b> (${refunds.length}건)`:''}</div>
     <div class="prog"><div style="width:${pct}%"></div></div>
     <div class="hint">막대 = 전체 중 납부 비율 ${pct}%</div>
   </div>
@@ -356,6 +375,7 @@ function vTuition(){
   ${expM.length?expM.map((m,i)=>{const ap=memberPasses(m.id).find(p=>p.status==='active');return `<a class="list-item" href="#/member/${m.id}"><span class="thumb"></span><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회 · ~'+md(ap.expire):''}</span></span><span class="arrow">›</span></a>`;}).join(''):'<div class="hint" style="margin:0 0 8px">만료 예정 회원 없음</div>'}
   <div class="section-title">미납 ${unpaid.length}</div>
   ${unpaid.length?unpaid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<a class="list-item" href="#/member/${p.memberId}"><span class="thumb"></span><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${esc(p.passName)} (${won(p.amount)}원)<br>기한 ${md(p.date)}</span></span><span class="badge">결제</span></a>`;}).join(''):'<div class="empty">미납 없음</div>'}
+  ${refunds.length?`<div class="section-title">환불 ${refunds.length}</div>${refunds.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)} · ${esc(p.passName)} (<span style="color:#b00">−${won(p.amount)}원</span>)<br><span class="sub">환불 (${md(p.date)})</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`;}).join('')}`:''}
   <div class="section-title">최근 납부 ${paid.length}</div>
   ${paid.length?paid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`;}).join(''):'<div class="empty">없음</div>'}
   </div>`+tabbar('tuition'); }
@@ -411,7 +431,7 @@ function mtMonth(m){
   return `${grid}<div class="note" style="margin-top:-4px">● = 수업 있음 · 빗금 = 휴무 · 날짜 탭 → 아래에 표시</div>${sel}`;
 }
 function mClassReserve(m,cid){ const c=DB.classes.find(x=>x.id===cid); if(!c) return mReserve(m); const up=usablePass(m.id,c.category); const rc=occRes(c.id).length; const full=rc>=c.capacity; return hdr('수업 상세','#/m/reserve')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}<br>예약 ${rc}/${c.capacity}</div></div><div class="section-title">사용할 수강권</div>${up?`<div class="card" style="border:2px solid #333">◉ <b>${esc(up.name)}</b><div class="note" style="margin:0">잔여 ${up.remaining}회 · 출석 시 1회 차감</div></div>`:(()=>{const pp=pendingPass(m.id,c.category);return pp?`<div class="card" style="border:2px solid #333">◉ <b>${esc(pp.name)}</b><div class="note" style="margin:0">개시 대기 — 첫 출석하는 날부터 유효기간이 시작됩니다</div></div>`:'<div class="empty">사용 가능한 수강권이 없습니다. 강사에게 결제를 등록받으세요.</div>';})()}${full?'<div class="empty">정원 마감</div>':`<a class="btn" data-book="${c.id}">예약하기</a>`}<div class="card" style="padding:10px;margin-top:12px"><div class="note" style="margin:0"><b>취소 정책</b><br>수업 24시간 전까지 취소 시 차감되지 않습니다.</div></div></div>`+mtab('reserve'); }
-function mPass(m){ const ps=memberPasses(m.id); return hdr('수강권')+`<div class="content">${memberSwitcher(m)}${ps.length?ps.map(p=>{const used=p.total-p.remaining;const pct=p.total?Math.round(used/p.total*100):0;return `<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':'만료'}</span>${p.status==='pending'?'<div class="note" style="margin:6px 0 0">개시 전 — 첫 출석부터 시작</div>':`<div class="note" style="margin:6px 0">잔여 <b>${p.remaining}회</b> / 총 ${p.total}회 · ~${md(p.expire)}</div><div class="prog"><div style="width:${100-pct}%"></div></div>`}</div>`;}).join(''):'<div class="empty">보유한 수강권이 없습니다</div>'}</div>`+mtab('pass'); }
+function mPass(m){ const ps=memberPasses(m.id); return hdr('수강권')+`<div class="content">${memberSwitcher(m)}${ps.length?ps.map(p=>{const used=p.total-p.remaining;const pct=p.total?Math.round(used/p.total*100):0;return `<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'개시 대기':p.status==='active'?'사용 중':p.status==='refunded'?'환불됨':'만료'}</span>${p.status==='refunded'?'<div class="note" style="margin:6px 0 0">환불 처리된 수강권입니다</div>':p.status==='pending'?'<div class="note" style="margin:6px 0 0">개시 전 — 첫 출석부터 시작</div>':`<div class="note" style="margin:6px 0">잔여 <b>${p.remaining}회</b> / 총 ${p.total}회 · ~${md(p.expire)}</div><div class="prog"><div style="width:${100-pct}%"></div></div>`}</div>`;}).join(''):'<div class="empty">보유한 수강권이 없습니다</div>'}</div>`+mtab('pass'); }
 function mUsage(m){ const atts=DB.attendance.filter(a=>a.memberId===m.id).slice().reverse(); const pays=DB.payments.filter(p=>p.memberId===m.id&&p.status==='paid').slice().reverse(); return hdr('이용내역')+`<div class="content">${memberSwitcher(m)}<div class="section-title">출석 · 차감</div>${atts.length?atts.map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${esc(c.name||'수업')}(${dateLabel(c.date||a.date)}, ${c.time||''})<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험 무료':a.deducted?' · 1회 차감':''}</span></span></div>`;}).join(''):'<div class="empty">이용내역이 없습니다</div>'}<div class="section-title">결제</div>${pays.length?pays.map(p=>`<div class="list-item"><span class="grow">${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span></div>`).join(''):'<div class="empty">없음</div>'}</div>`+mtab('usage'); }
 function mProfile(m){ return hdr('내 정보')+`<div class="content">${memberSwitcher(m)}<div class="card"><h3 style="font-size:16px">${esc(m.name)}</h3><div class="note" style="margin:0">${m.phone}${m.birth?' · '+m.birth:''}${m.addr?' · '+esc(m.addr):''}</div></div><div class="section-title">알림 설정</div><div class="note">앱 푸시 알림: 켜짐</div></div>`+mtab('profile'); }
 
@@ -450,6 +470,7 @@ function wire(){
   document.querySelectorAll('[data-unblock]').forEach(b=>b.onclick=()=>doUnblock(b.dataset.unblock));
   const fedit=document.getElementById('fedit'); if(fedit) fedit.onsubmit=e=>{e.preventDefault();doClassEdit(fedit);};
   const fpay=document.getElementById('fpay'); if(fpay) fpay.onsubmit=e=>{e.preventDefault();doPayment(fpay);};
+  const frefund=document.getElementById('frefund'); if(frefund) frefund.onsubmit=e=>{e.preventDefault();doRefund(frefund);};
   const fatt=document.getElementById('fatt'); if(fatt) fatt.onsubmit=e=>{e.preventDefault();doAttend(fatt);};
   const fjoin=document.getElementById('fjoin'); if(fjoin) fjoin.onsubmit=e=>{e.preventDefault();doJoin(fjoin);};
   document.querySelectorAll('[data-book]').forEach(b=>b.onclick=()=>doBook(b.dataset.book));
@@ -635,6 +656,14 @@ async function doPayment(f){ const mid=f.dataset.mid; const d=Object.fromEntries
   else { DB.payments.push(pay); await saveDB(); toast('미납 등록'); }
   go('#/member/'+mid);
 }
+async function doRefund(f){ const mp=DB.mpasses.find(x=>x.id===f.dataset.mp); if(!mp) return;
+  const d=Object.fromEntries(new FormData(f));
+  const amt=+String(d.amount).replace(/[^0-9]/g,'');
+  if(!confirm(`${won(amt)}원 환불을 확정할까요?\n수강권은 '환불됨' 처리되고 다가올 예약은 자동 취소됩니다.`)) return;
+  mp.status='refunded';
+  let cn=0; DB.reservations.forEach(r=>{ if(r.memberId===mp.memberId&&r.status==='booked'){ const c=DB.classes.find(x=>x.id===r.classId); if(c&&c.date>=todayStr){ r.status='cancelled'; cn++; } } });
+  DB.payments.push({id:uid(),memberId:mp.memberId,passId:mp.passId,passName:mp.name,method:'환불',amount:amt,date:d.date||todayStr,status:'refund',mpId:null});
+  await saveDB(); toast(`환불 처리 완료${cn?` · 예약 ${cn}건 취소`:''}`); go('#/member/'+mp.memberId); }
 async function doDelPay(id){ const p=DB.payments.find(x=>x.id===id); if(!p) return;
   if(!confirm('이 결제 기록을 삭제할까요?'+(p.mpId?' 연결된 수강권도 함께 삭제됩니다.':''))) return;
   DB.payments=DB.payments.filter(x=>x.id!==id);
