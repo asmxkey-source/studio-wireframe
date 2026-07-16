@@ -157,7 +157,7 @@ function render(){
 
 // ===== 공통 =====
 function hdr(title,back){ return `<div class="topbar">${back?`<a class="back" href="${back}">←</a>`:'<div class="back"></div>'}<div class="title">${title}</div><div class="spacer synced">●연동</div></div>`; }
-function tabbar(a){ const t=[['timetable','시간표'],['classAdd','수업 등록'],['members','회원'],['passes','수강권'],['tuition','수강 현황']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
+function tabbar(a){ const t=[['timetable','시간표'],['classAdd','수업 등록'],['members','회원'],['passes','수강권'],['tuition','수강료']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
 function mtab(a){ const t=[['reserve','수업 예약'],['pass','수강권'],['usage','이용내역'],['profile','내 정보']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/m/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
 
 // ===== 스튜디오 코드 화면 =====
@@ -200,7 +200,7 @@ function vPassAdd(){ return hdr('수강권 추가','#/passes')+`<div class="cont
   <div class="row"><div class="field"><label>횟수 <span class="req">*</span></label><input class="input" name="count" type="number" inputmode="numeric" min="1" required></div><div class="field"><label>유효기간(개월) <span class="req">*</span></label><input class="input" name="months" type="number" inputmode="numeric" min="1" required></div></div>
   <div class="field"><label>금액(원) <span class="req">*</span></label><input class="input money" name="price" type="text" inputmode="numeric" placeholder="440,000" required><div class="hint">회원 1인이 결제하는 금액 (예: 10회에 440,000원)</div></div>
   <button class="btn" type="submit">수강권 등록</button></form></div>`+tabbar('passes'); }
-function vMembers(){ return hdr('회원')+`<div class="content"><div style="margin-bottom:8px"><span class="tag dark">전체 ${DB.members.length}</span> <span class="hint">체크 후 하단 버튼으로 한 번에 예약</span></div>${DB.members.length?DB.members.map(m=>{const st=memberStatus(m.id);const ap=memberPasses(m.id).find(p=>p.status==='active');return `<div class="list-item"><input type="checkbox" class="mchk" data-mid="${m.id}" style="width:20px;height:20px;flex-shrink:0;accent-color:#555"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer">${esc(m.name)} <span class="tag ${['미납','만료 예정'].includes(st)?'dark':''}">${st}</span> ${m.joined?'':'<span class="tag">가입대기</span>'}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':'수강권 없음'}<br>${m.phone}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">등록된 회원이 없습니다</div>'}<a class="btn" href="#/memberAdd" style="margin-top:12px">＋ 회원 등록 · 초대</a><a class="btn" id="bulkBook" style="display:none;margin-top:8px">✓ 선택한 0명 수업 예약</a></div>`+tabbar('members'); }
+function vMembers(){ return hdr('회원')+`<div class="content"><div style="margin-bottom:8px;display:flex;align-items:center;gap:8px"><span class="tag dark">전체 ${DB.members.length}</span> ${DB.members.length?`<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;cursor:pointer"><input type="checkbox" id="mchkAll" style="width:16px;height:16px;accent-color:#555">전체 선택</label>`:''} <span class="hint">체크 후 하단 버튼으로 한 번에 예약</span></div>${DB.members.length?DB.members.map(m=>{const st=memberStatus(m.id);const ap=memberPasses(m.id).find(p=>p.status==='active');return `<div class="list-item"><input type="checkbox" class="mchk" data-mid="${m.id}" style="width:20px;height:20px;flex-shrink:0;accent-color:#555"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer">${esc(m.name)} <span class="tag ${['미납','만료 예정'].includes(st)?'dark':''}">${st}</span> ${m.joined?'':'<span class="tag">가입대기</span>'}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':'수강권 없음'}<br>${m.phone}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">등록된 회원이 없습니다</div>'}<a class="btn" href="#/memberAdd" style="margin-top:12px">＋ 회원 등록 · 초대</a><a class="btn" id="bulkBook" style="display:none;margin-top:8px">✓ 선택한 0명 수업 예약</a></div>`+tabbar('members'); }
 function vBookFor(){
   if(!BULK.length) return vMembers();
   const names=BULK.map(id=>(DB.members.find(m=>m.id===id)||{}).name).filter(Boolean);
@@ -337,7 +337,7 @@ function vTuition(){
   const unpaidSum=unpaid.reduce((s,p)=>s+(+p.amount||0),0);
   const tot=paidSum+unpaidSum; const pct=tot?Math.round(paidSum/tot*100):0;
   const expM=DB.members.filter(m=>memberStatus(m.id)==='만료 예정');
-  return hdr('수강 현황')+`<div class="content">
+  return hdr('수강료')+`<div class="content">
   <div class="card"><b>수강료 요약</b>
     <div class="note" style="margin:6px 0 4px">납부 <b>${won(paidSum)}원</b> (${paid.length}건) · 미납 <b>${won(unpaidSum)}원</b> (${unpaid.length}건)</div>
     <div class="prog"><div style="width:${pct}%"></div></div>
@@ -449,8 +449,9 @@ function wire(){
   const tb=document.getElementById('trainerBook'); if(tb) tb.onclick=()=>doTrainerBook(tb.dataset.cid);
   document.querySelectorAll('[data-delmember]').forEach(b=>b.onclick=()=>doDelMember(b.dataset.delmember));
   // 회원 다중 선택 → 일괄 예약
-  const chks=[...document.querySelectorAll('.mchk')]; const bb=document.getElementById('bulkBook');
-  if(chks.length&&bb){ const upd=()=>{ const n=chks.filter(c=>c.checked).length; bb.style.display=n?'block':'none'; bb.textContent='✓ 선택한 '+n+'명 수업 예약'; }; chks.forEach(c=>c.onchange=upd); bb.onclick=()=>{ BULK=chks.filter(c=>c.checked).map(c=>c.dataset.mid); if(BULK.length) go('#/bookFor'); }; }
+  const chks=[...document.querySelectorAll('.mchk')]; const bb=document.getElementById('bulkBook'); const chkAll=document.getElementById('mchkAll');
+  if(chks.length&&bb){ const upd=()=>{ const n=chks.filter(c=>c.checked).length; bb.style.display=n?'block':'none'; bb.textContent='✓ 선택한 '+n+'명 수업 예약'; if(chkAll) chkAll.checked=(n===chks.length); }; chks.forEach(c=>c.onchange=upd); bb.onclick=()=>{ BULK=chks.filter(c=>c.checked).map(c=>c.dataset.mid); if(BULK.length) go('#/bookFor'); };
+    if(chkAll) chkAll.onchange=()=>{ chks.forEach(c=>c.checked=chkAll.checked); upd(); }; }
   document.querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>go(el.dataset.go));
   document.querySelectorAll('[data-bulkto]').forEach(b=>b.onclick=()=>doBulkBookAll(b.dataset.bulkto));
   // 수업 상세: 예약자 다중 선택 → 일괄 취소
