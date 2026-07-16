@@ -157,7 +157,7 @@ function render(){
 
 // ===== 공통 =====
 function hdr(title,back){ return `<div class="topbar">${back?`<a class="back" href="${back}">←</a>`:'<div class="back"></div>'}<div class="title">${title}</div><div class="spacer synced">●연동</div></div>`; }
-function tabbar(a){ const t=[['timetable','시간표'],['classAdd','수업 등록'],['members','회원'],['passes','수강권'],['tuition','수강료']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
+function tabbar(a){ const t=[['timetable','시간표·예약'],['classAdd','수업 등록'],['members','회원'],['passes','수강권'],['tuition','수강료']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
 function mtab(a){ const t=[['reserve','수업 예약'],['pass','수강권'],['usage','이용내역'],['profile','내 정보']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/m/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
 
 // ===== 스튜디오 코드 화면 =====
@@ -207,9 +207,10 @@ function vBookFor(){
   const cls=DB.classes.filter(c=>c.date>=todayStr).sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1);
   return hdr('수업 선택','#/members')+`<div class="content">
   <div class="card"><b>예약할 회원 (${names.length}명)</b><div class="note" style="margin:4px 0 0">${names.map(esc).join(', ')}</div></div>
-  <div class="field"><label>반복 수업일 때 적용 범위</label><div class="seg" id="bookScope" data-v="one"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 모두<br>(고정 수강)</a></div><div class="hint">교차 수강처럼 회원이 요일을 골라 다니는 경우 → <b>'이 회차만'</b> 선택 (기본값).<br>매주 같은 요일에만 고정으로 다니는 회원 → <b>'이후 회차 모두'</b> 선택 시 앞으로의 모든 회차에 자동 예약됩니다.</div></div>
-  <div class="section-title">수업 선택 <span class="sub" style="font-weight:400">— 탭하면 바로 예약됩니다</span></div>
-  ${cls.length?cls.map(c=>{const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length;return `<a class="classblock ${c.category==='personal'?'personal':''}" data-bulkto="${c.id}"><span class="t">${md(c.date)} (${WD[dow(c.date)]}) ${c.time}</span> <span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span>${c.seriesId?' 🔁':''}<div class="n">${esc(c.name)}</div><div class="meta">예약 ${rc}/${c.capacity}</div></a>`;}).join(''):'<div class="empty">예약 가능한 수업이 없습니다</div>'}
+  <div class="field"><label>반복 수업일 때 적용 범위</label><div class="seg" id="bookScope" data-v="one"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 반복<br>(고정 수강)</a></div><div class="hint">교차 수강처럼 회원이 요일을 골라 다니는 경우 → <b>'이 회차만'</b> 선택 (기본값).<br>매주 같은 요일에만 고정으로 다니는 회원 → <b>'이후 회차 반복'</b> 선택 시 앞으로의 모든 회차에 자동 예약됩니다.</div></div>
+  <div class="section-title">수업 선택 <span class="sub" style="font-weight:400">— 체크 후 하단 버튼으로 한 번에 예약</span></div>
+  ${cls.length?cls.map(c=>{const rc=DB.reservations.filter(r=>r.classId===c.id&&r.status==='booked').length;return `<label class="classblock ${c.category==='personal'?'personal':''}" style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" class="cchk" data-cid="${c.id}" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;accent-color:#555"><span style="flex:1"><span class="t">${md(c.date)} (${WD[dow(c.date)]}) ${c.time}</span> <span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span>${c.seriesId?' 🔁':''}<div class="n">${esc(c.name)}</div><div class="meta">예약 ${rc}/${c.capacity}</div></span></label>`;}).join(''):'<div class="empty">예약 가능한 수업이 없습니다</div>'}
+  ${cls.length?`<a class="btn" id="confirmBulkBook">선택한 수업 0개에 예약</a>`:''}
   </div>`+tabbar('members');
 }
 function vMemberAdd(){ return hdr('회원 등록 · 초대','#/members')+`<div class="content"><div class="note">이름·휴대폰 입력 후 등록하면 초대 링크가 만들어집니다. 그 링크를 카톡으로 회원에게 보내세요.</div><form id="f">
@@ -326,7 +327,7 @@ function vClassAdd(){
   <a class="btn ghost" href="#/blockAdd">설정 (휴가, 개인 일정 등)</a></div>`+tabbar('classAdd'); }
 function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="list-item"><input type="checkbox" class="rchk" data-mid="${r.memberId}" style="width:20px;height:20px;flex-shrink:0;accent-color:#555"><span class="grow">${esc(m.name)}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}
 ${rs.length?`<div id="cancelBox" style="display:none;margin-top:8px">${c.seriesId?`<div class="seg" id="cancelScope" data-v="one" style="margin-bottom:6px"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 모두</a></div>`:''}<a class="btn ghost" id="bulkCancel" data-cid="${id}">선택 0건 예약 취소</a></div>`:''}
-${(()=>{ const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)); const full=rs.length>=c.capacity; if(!avail.length||full) return full?'<div class="hint">정원 마감 — 예약 추가 불가</div>':''; return `<div class="field" style="margin-top:10px"><label>회원 예약 추가<br><span style="font-weight:400;color:#888;font-size:11px">(강사 대리)</span></label>${c.seriesId?`<div class="seg" id="bookScope" data-v="one" style="margin-bottom:6px"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 모두<br>(고정 수강)</a></div><div class="hint" style="margin:0 0 6px">교차 수강 등 요일을 골라 다니면 → '이 회차만'. 매주 이 요일에 고정으로 다니면 → '이후 회차 모두'</div>`:''}<div class="row"><select class="input" id="bookSel">${avail.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><a class="btn ghost" id="trainerBook" data-cid="${id}" style="flex:0 0 80px;margin:0">추가</a></div></div>`; })()}
+${(()=>{ const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)); const full=rs.length>=c.capacity; if(!avail.length||full) return full?'<div class="hint">정원 마감 — 예약 추가 불가</div>':''; return `<div class="field" style="margin-top:10px"><label>회원 예약 추가<br><span style="font-weight:400;color:#888;font-size:11px">(강사 대리)</span></label>${c.seriesId?`<div class="seg" id="bookScope" data-v="one" style="margin-bottom:6px"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 반복<br>(고정 수강)</a></div><div class="hint" style="margin:0 0 6px">교차 수강 등 요일을 골라 다니면 → '이 회차만'. 매주 이 요일에 고정으로 다니면 → '이후 회차 반복'</div>`:''}<div class="row"><select class="input" id="bookSel">${avail.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><a class="btn ghost" id="trainerBook" data-cid="${id}" style="flex:0 0 80px;margin:0">추가</a></div></div>`; })()}
 ${rs.length?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석 체크</a>`:''}${c.seriesId?'<div class="note" style="margin-top:8px">🔁 매주 반복 수업</div>':''}<a class="btn ghost" href="#/classEdit/${id}" style="margin-top:12px">수정</a><div class="section-title">수업 접기 (폐강)</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">폐강</a>`}</div>`+tabbar('timetable'); }
 function vAttend(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=DB.reservations.filter(r=>r.classId===id&&r.status==='booked'); return hdr('출석 체크','#/class/'+id)+`<div class="content"><div class="card"><b>${esc(c.name)}</b><div class="note" style="margin:0">${md(c.date)} ${c.time}</div></div><form id="fatt" data-class="${id}">${rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);return `<div class="card" data-mid="${r.memberId}"><b>${esc(m.name)}</b> ${up?'<span class="sub">'+esc(up.name)+' 잔여 '+up.remaining+'회</span>':'<span class="tag">결제 전</span>'}<div style="margin-top:6px"><span class="chip att on" data-r="present">출석</span><span class="chip att" data-r="absent">결석</span><span class="chip att" data-r="noshow">노쇼</span> <span class="chip trial" data-t="0">체험 아님</span></div></div>`;}).join('')}<button class="btn" type="submit">저장 (출석 시 자동 차감)</button></form></div>`+tabbar('timetable'); }
 function vPayment(mid){ const m=DB.members.find(x=>x.id===mid); if(!m) return vMembers(); if(!DB.passes.length) return hdr('결제','#/member/'+mid)+`<div class="content"><div class="empty">먼저 수강권을 등록하세요<br><a class="btn" href="#/passAdd" style="margin-top:10px">수강권 만들기</a></div></div>`+tabbar('members'); return hdr('결제 사항 등록','#/member/'+mid)+`<div class="content"><div class="card"><b>${esc(m.name)}</b></div><form id="fpay" data-mid="${mid}"><div class="field"><label>수강권 <span class="req">*</span></label><select class="input" name="passId" required>${DB.passes.map(p=>`<option value="${p.id}">${esc(p.name)} — ${won(p.price)}원</option>`).join('')}</select></div><div class="field"><label>결제 수단</label><div class="seg" id="method" data-v="현금"><a class="on" data-v="현금">현금</a><a data-v="계좌이체">계좌이체</a><a data-v="카드">카드</a><a data-v="미납">미납</a></div></div><div class="field"><label>납부일</label><input class="input" name="paidDate" type="date" value="${todayStr}"><div class="hint">실제로 돈을 받은 날짜 — '수강료' 탭의 최근 납부에 이 날짜로 표시됩니다</div></div><div class="field"><label>개시 방식 <span style="font-weight:400;color:#888;font-size:11px">— 유효기간을 언제부터 셀까</span></label><div class="seg" id="start" data-v="first"><a class="on" data-v="first">첫 출석 시</a><a data-v="now">즉시</a></div><div class="hint">· <b>첫 출석 시</b>(권장): 결제해도 기간이 안 흐르고, 처음 출석한 날부터 유효기간 시작 — 미리 결제한 회원이 손해 안 봄<br>· <b>즉시</b>: 오늘(결제일)부터 유효기간 시작 — 바로 다니는 회원</div></div><button class="btn" type="submit">결제 등록</button></form></div>`+tabbar('members'); }
@@ -453,7 +454,13 @@ function wire(){
   if(chks.length&&bb){ const upd=()=>{ const n=chks.filter(c=>c.checked).length; bb.style.display=n?'block':'none'; bb.textContent='✓ 선택한 '+n+'명 수업 예약'; if(chkAll) chkAll.checked=(n===chks.length); }; chks.forEach(c=>c.onchange=upd); bb.onclick=()=>{ BULK=chks.filter(c=>c.checked).map(c=>c.dataset.mid); if(BULK.length) go('#/bookFor'); };
     if(chkAll) chkAll.onchange=()=>{ chks.forEach(c=>c.checked=chkAll.checked); upd(); }; }
   document.querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>go(el.dataset.go));
-  document.querySelectorAll('[data-bulkto]').forEach(b=>b.onclick=()=>doBulkBookAll(b.dataset.bulkto));
+  // 수업 선택: 체크박스 다중 선택 → 하단 확정 버튼
+  const cchks=[...document.querySelectorAll('.cchk')]; const confirmBtn=document.getElementById('confirmBulkBook');
+  if(cchks.length&&confirmBtn){
+    const updCls=()=>{ const n=cchks.filter(c=>c.checked).length; confirmBtn.textContent='선택한 수업 '+n+'개에 예약'; };
+    cchks.forEach(c=>c.onchange=updCls);
+    confirmBtn.onclick=()=>{ const ids=cchks.filter(c=>c.checked).map(c=>c.dataset.cid); if(!ids.length){ toast('수업을 선택하세요'); return; } doBulkBookAll(ids); };
+  }
   // 수업 상세: 예약자 다중 선택 → 일괄 취소
   const rchks=[...document.querySelectorAll('.rchk')]; const cxBox=document.getElementById('cancelBox'); const bc=document.getElementById('bulkCancel');
   if(rchks.length&&cxBox&&bc){ const upd=()=>{ const n=rchks.filter(x=>x.checked).length; cxBox.style.display=n?'block':'none'; bc.textContent='선택 '+n+'건 예약 취소'; }; rchks.forEach(x=>x.onchange=upd); bc.onclick=()=>doBulkCancel(bc.dataset.cid); }
@@ -471,11 +478,16 @@ async function doBulkCancel(cid){
   if(!n){ toast('취소할 예약이 없습니다'); return; }
   await saveDB(); toast(`예약 ${n}건 취소 · 회원 알림(가정)`); render();
 }
-async function doBulkBookAll(cid){
-  const c=DB.classes.find(x=>x.id===cid); if(!c||!BULK.length) return;
+async function doBulkBookAll(cids){
+  if(!Array.isArray(cids)) cids=[cids];
+  if(!cids.length||!BULK.length) return;
   const scope=(document.getElementById('bookScope')||{dataset:{v:'one'}}).dataset.v;
-  let targets=[c];
-  if(scope==='after'&&c.seriesId) targets=DB.classes.filter(x=>x.seriesId===c.seriesId&&x.date>=c.date);
+  let targets=[];
+  cids.forEach(cid=>{ const c=DB.classes.find(x=>x.id===cid); if(!c) return;
+    if(scope==='after'&&c.seriesId) targets.push(...DB.classes.filter(x=>x.seriesId===c.seriesId&&x.date>=c.date));
+    else targets.push(c);
+  });
+  targets=[...new Map(targets.map(t=>[t.id,t])).values()]; // 중복 제거
   let ok=0,full=0,dup=0;
   targets.forEach(t=>{ BULK.forEach(mid=>{
     if(DB.reservations.find(r=>r.classId===t.id&&r.memberId===mid&&r.status==='booked')){ dup++; return; }
@@ -485,7 +497,7 @@ async function doBulkBookAll(cid){
   }); });
   if(!ok){ toast(full?'정원 마감으로 추가 불가':'이미 모두 예약되어 있습니다'); return; }
   await saveDB(); toast(`예약 ${ok}건 추가${full?` · 마감 ${full}건 제외`:''}${dup?` · 중복 ${dup}건 제외`:''}`);
-  BULK=[]; go('#/class/'+cid);
+  BULK=[]; go(cids.length===1?'#/class/'+cids[0]:'#/timetable');
 }
 async function doBulkAdd(f){
   const txt=(new FormData(f)).get('bulk')||''; const lines=txt.split(/\n/).map(s=>s.trim()).filter(Boolean);
