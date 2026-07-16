@@ -356,7 +356,7 @@ function vTuition(){
   ${expM.length?expM.map((m,i)=>{const ap=memberPasses(m.id).find(p=>p.status==='active');return `<a class="list-item" href="#/member/${m.id}"><span class="thumb"></span><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회 · ~'+md(ap.expire):''}</span></span><span class="arrow">›</span></a>`;}).join(''):'<div class="hint" style="margin:0 0 8px">만료 예정 회원 없음</div>'}
   <div class="section-title">미납 ${unpaid.length}</div>
   ${unpaid.length?unpaid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<a class="list-item" href="#/member/${p.memberId}"><span class="thumb"></span><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${esc(p.passName)} (${won(p.amount)}원)<br>기한 ${md(p.date)}</span></span><span class="badge">결제</span></a>`;}).join(''):'<div class="empty">미납 없음</div>'}
-  <div class="section-title">최근 납부</div>
+  <div class="section-title">최근 납부 ${paid.length}</div>
   ${paid.length?paid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span></div>`;}).join(''):'<div class="empty">없음</div>'}
   </div>`+tabbar('tuition'); }
 
