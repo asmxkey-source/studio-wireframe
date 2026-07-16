@@ -302,7 +302,7 @@ function vClassAdd(){
   <div class="field"><label>반복</label><div class="seg" id="rep" data-v="none"><a class="on" data-v="none">반복 안 함</a><a data-v="weekly">매주 반복</a></div></div>
   <div id="repBlock" style="display:none">
     <div class="field"><label>반복 요일 (다중 선택)</label><div id="wdays">${['월','화','수','목','금','토','일'].map((w,i)=>`<span class="chip wd" data-d="${(i+1)%7}">${w}</span>`).join('')}</div></div>
-    <div class="field"><label>종료 조건</label><div class="seg" id="endmode" data-v="count"><a data-v="cont">계속</a><a class="on" data-v="count">횟수</a><a data-v="until">종료일</a></div></div>
+    <div class="field"><label>종료 조건</label><div class="seg" id="endmode" data-v="count"><a data-v="cont">상시</a><a class="on" data-v="count">횟수</a><a data-v="until">종료일</a></div></div>
     <div class="field" id="endCountF"><label>총 횟수</label><input class="input" id="endCount" type="number" inputmode="numeric" min="1" value="10"></div>
     <div class="field" id="endUntilF" style="display:none"><label>종료일</label><input class="input" id="endUntil" type="date"></div>
     <div class="hint">예약 불가 기간과 겹치는 회차는 자동으로 건너뜁니다. '횟수'는 건너뛴 만큼 뒤로 밀어 채웁니다. '계속'은 약 3개월치를 미리 생성합니다.</div>
