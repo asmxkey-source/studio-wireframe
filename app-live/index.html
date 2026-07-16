@@ -22,6 +22,14 @@
   .empty { border:2px dashed #bbb; border-radius:8px; padding:28px 12px; text-align:center; color:#888; font-size:13px; background:#fcfcfc; }
   #bookScope { display:flex; }
   #bookScope a { display:flex; align-items:center; justify-content:center; padding:10px 4px; line-height:1.3; min-height:40px; }
+  .seg.vertical { display:block; border:none; overflow:visible; }
+  .seg.vertical a { display:block; text-align:left; border:1px solid #ccc; border-radius:8px; padding:10px 12px; margin-bottom:6px; background:#fff; position:relative; padding-left:34px; }
+  .seg.vertical a b { display:block; font-size:13px; }
+  .seg.vertical a .sub { display:block; font-size:11px; color:#888; font-weight:400; margin-top:2px; }
+  .seg.vertical a::before { content:''; position:absolute; left:10px; top:12px; width:16px; height:16px; border:2px solid #999; border-radius:50%; }
+  .seg.vertical a.on { border-color:#555; background:#f7f7f7; }
+  .seg.vertical a.on b { color:#222; }
+  .seg.vertical a.on::before { border-color:#555; background:#555; box-shadow: inset 0 0 0 3px #f7f7f7; }
   .chip.wd { min-width:30px; text-align:center; }
   table.cal { width:100%; border-collapse:collapse; table-layout:fixed; margin:8px 0; }
   table.cal th { font-size:11px; color:#777; padding:4px 0; font-weight:400; }
@@ -302,10 +310,16 @@ function vClassAdd(){
   <div class="field"><label>반복</label><div class="seg" id="rep" data-v="none"><a class="on" data-v="none">반복 안 함</a><a data-v="weekly">매주 반복</a></div></div>
   <div id="repBlock" style="display:none">
     <div class="field"><label>반복 요일 (다중 선택)</label><div id="wdays">${['월','화','수','목','금','토','일'].map((w,i)=>`<span class="chip wd" data-d="${(i+1)%7}">${w}</span>`).join('')}</div></div>
-    <div class="field"><label>종료 조건</label><div class="seg" id="endmode" data-v="count"><a data-v="cont">상시</a><a class="on" data-v="count">횟수</a><a data-v="until">종료일</a></div></div>
-    <div class="field" id="endCountF"><label>총 횟수</label><input class="input" id="endCount" type="number" inputmode="numeric" min="1" value="10"></div>
-    <div class="field" id="endUntilF" style="display:none"><label>종료일</label><input class="input" id="endUntil" type="date"></div>
-    <div class="hint">예약 불가 기간과 겹치는 회차는 자동으로 건너뜁니다. '횟수'는 건너뛴 만큼 뒤로 밀어 채웁니다. '계속'은 약 3개월치를 미리 생성합니다.</div>
+    <div class="field"><label>이 수업, 언제까지 계속 열어둘까요?</label>
+      <div class="seg vertical" id="endmode" data-v="cont">
+        <a class="on" data-v="cont"><b>계속 운영</b><span class="sub">종료 없이 매주 계속 엽니다 (가장 흔함)</span></a>
+        <a data-v="until"><b>특정 날짜까지만</b><span class="sub">그 날짜 이후엔 자동으로 안 열립니다</span></a>
+        <a data-v="count"><b>정해진 횟수만</b><span class="sub">N회 열고 자동 종료 (8주 과정 등)</span></a>
+      </div>
+    </div>
+    <div class="field" id="endUntilF" style="display:none"><label>종료 날짜</label><input class="input" id="endUntil" type="date"></div>
+    <div class="field" id="endCountF" style="display:none"><label>총 횟수</label><input class="input" id="endCount" type="number" inputmode="numeric" min="1" value="10"></div>
+    <div class="hint">예약 불가 기간과 겹치는 회차는 자동으로 건너뜁니다.</div>
   </div>
   <button class="btn" type="submit">수업 등록</button></form>
   <div class="section-title">예약 불가</div>
