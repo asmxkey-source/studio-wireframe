@@ -385,6 +385,16 @@ function vClassAdd(){
     <div class="hint">예약 불가 기간과 겹치는 회차는 자동으로 건너뜁니다.</div>
   </div>
   <button class="btn" type="submit">수업 등록</button></form>
+  ${(()=>{ const groups=new Map();
+    DB.classes.forEach(c=>{ const k=c.seriesId||('single-'+c.id); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(c); });
+    const rows=[...groups.values()].map(list=>{ list.sort((a,b)=>a.date<b.date?-1:1);
+      const fut=list.filter(c=>c.date>=todayStr); const rep=fut[0]||list[list.length-1];
+      const days=rep.seriesId?[...new Set(list.map(c=>WD[dow(c.date)]))].join('·'):null;
+      return {rep,futCnt:fut.length,days,nextDate:fut[0]?fut[0].date:null};
+    }).sort((a,b)=>((a.nextDate||'9999')+(a.rep.time||''))<((b.nextDate||'9999')+(b.rep.time||''))?-1:1);
+    if(!rows.length) return '';
+    return `<div class="section-title">운영 중인 수업 ${rows.length}</div><div class="hint" style="margin:-4px 0 6px">탭하면 ${rows.some(r=>r.nextDate)?'다음 회차의 ':''}수업 상세로 이동 · '남은 회차 0'은 앞으로 열릴 회차가 없다는 뜻 — 계속 운영하려면 위에서 다시 등록하세요</div>`+rows.map((r,i)=>`<a class="list-item" href="#/class/${r.rep.id}"><span class="grow"><span class="num">${i+1}</span>${esc(r.rep.name)} <span class="tag ${r.rep.category==='group'?'dark':''}">${r.rep.category==='group'?'그룹':'개인'}</span><br><span class="sub">${r.rep.seriesId?'매주 '+r.days:'단건 '+md(r.rep.date)} ${r.rep.time||''}${r.nextDate?' · 다음 회차 '+md(r.nextDate):''}</span></span>${r.futCnt?`<span class="sub">남은 회차 ${r.futCnt}</span>`:'<span class="tag warn">남은 회차 0</span>'}</a>`).join('');
+  })()}
   <div class="section-title">예약 불가</div>
   <a class="btn ghost" href="#/blockAdd">설정 (휴가, 개인 일정 등)</a></div>`+tabbar('classAdd'); }
 function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=occRes(id); const hasBooked=rs.some(r=>r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map((r,i)=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);const pp=up?null:pendingPass(r.memberId,c.category);const done=r.status==='done';return `<div class="list-item">${done?'<span style="width:20px;flex-shrink:0;text-align:center">✓</span>':`<input type="checkbox" class="rchk" data-mid="${r.memberId}" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--pt-blue)">`}<span class="grow"><span class="num">${i+1}</span>${esc(m.name)}${done?' <span class="tag">출석 완료</span>':''}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':pp?esc(pp.name)+' · 개시 대기 (첫 출석 시 시작)':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}
