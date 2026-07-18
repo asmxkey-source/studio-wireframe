@@ -17,7 +17,9 @@
   .chip { display:inline-block; font-size:12px; border:1px solid #888; border-radius:14px; padding:5px 10px; margin:2px 2px 2px 0; cursor:pointer; background:#fff; }
   .chip.on { background:#666; color:#fff; border-color:#666; }
   .btn, .chip, .seg a, .tab, .list-item, .classblock, .day { cursor:pointer; }
-  .num { font-size:11px; color:#aaa; margin-right:4px; vertical-align:middle; position:relative; top:-2px; }
+  .list-item .num { font-size:11px; color:#aaa; margin-right:4px; vertical-align:middle; position:relative; top:-2px; }
+  .day.sel { border:2px solid #555; background:#f0f0f0; }
+  .day.sel .num { font-weight:800; }
   .prog { height:14px; border:1px solid #999; border-radius:7px; overflow:hidden; background:#eee; }
   .prog > div { height:100%; background:#888; }
   .empty { border:2px dashed #bbb; border-radius:8px; padding:28px 12px; text-align:center; color:#888; font-size:13px; background:#fcfcfc; }
@@ -256,7 +258,7 @@ function ttNav(label){
 function ttLabel(){ if(TT.view==='week'){ const ws=weekStart(TT.ref); return md(ws)+' ~ '+md(addDays(ws,6)); } const [y,mo]=monthKey(TT.ref).split('-'); return `${y}년 ${+mo}월`; }
 function ttStrip(){
   const ws=weekStart(TT.ref); const days=[]; for(let i=0;i<7;i++) days.push(addDays(ws,i));
-  return `<div class="week">${days.map(dt=>`<a class="day ${dt===todayStr?'today':''}">${WD[dow(dt)]}<span class="num">${+dt.slice(8)}</span></a>`).join('')}</div>`;
+  return `<div class="week">${days.map(dt=>`<a class="day ${dt===todayStr?'today':''} ${dt===TT.sel?'sel':''}" data-day="${dt}">${WD[dow(dt)]}<span class="num">${+dt.slice(8)}</span></a>`).join('')}</div>`;
 }
 function ttWeekBody(blockFn,blockLabel){
   const ws=weekStart(TT.ref); const days=[]; for(let i=0;i<7;i++) days.push(addDays(ws,i));
@@ -316,7 +318,7 @@ function vClassAdd(){
     <div class="field"><label>카테고리</label><div class="seg" id="cat" data-v="group"><a class="on" data-v="group">그룹</a><a data-v="personal">개인</a></div></div>
     <div class="field"><label>수업명</label><input class="input" name="cname" placeholder="필라테스 초급"></div>
   </div>
-  <div class="row"><div class="field"><label>날짜 <span class="req">*</span></label><input class="input" name="date" type="date" value="${todayStr}" required></div><div class="field"><label>시간 <span class="req">*</span></label><input class="input" name="time" placeholder="10:00" required></div></div>
+  <div class="row"><div class="field"><label>날짜 <span class="req">*</span></label><input class="input" name="date" type="date" value="${TT.sel||todayStr}" required><div class="hint">시간표에서 날짜를 탭해두면 자동 입력</div></div><div class="field"><label>시간 <span class="req">*</span></label><input class="input" name="time" placeholder="10:00" required></div></div>
   <div class="row"><div class="field"><label>정원 <span class="req">*</span></label><input class="input" name="capacity" type="number" inputmode="numeric" min="1" value="6" required></div><div class="field"><label>장소</label><input class="input" name="place" placeholder="스튜디오 A"></div></div>
   <div class="field"><label>반복</label><div class="seg" id="rep" data-v="none"><a class="on" data-v="none">반복 안 함</a><a data-v="weekly">매주 반복</a></div></div>
   <div id="repBlock" style="display:none">
@@ -468,7 +470,7 @@ function wire(){
   const ttPrev=document.getElementById('ttPrev'); if(ttPrev) ttPrev.onclick=()=>{ TT.ref=TT.view==='week'?addDays(TT.ref,-7):addMonths(TT.ref,-1); render(); };
   const ttNext=document.getElementById('ttNext'); if(ttNext) ttNext.onclick=()=>{ TT.ref=TT.view==='week'?addDays(TT.ref,7):addMonths(TT.ref,1); render(); };
   const ttToday=document.getElementById('ttToday'); if(ttToday) ttToday.onclick=()=>{ TT.ref=todayStr; TT.sel=todayStr; render(); };
-  document.querySelectorAll('td[data-day]').forEach(td=>td.onclick=()=>{ if(td.dataset.day){ TT.sel=td.dataset.day; render(); } });
+  document.querySelectorAll('[data-day]').forEach(td=>td.onclick=()=>{ if(td.dataset.day){ TT.sel=td.dataset.day; render(); } });
   const fblock=document.getElementById('fblock'); if(fblock) fblock.onsubmit=e=>{e.preventDefault();doBlockAdd(fblock);};
   document.querySelectorAll('[data-unblock]').forEach(b=>b.onclick=()=>doUnblock(b.dataset.unblock));
   const fedit=document.getElementById('fedit'); if(fedit) fedit.onsubmit=e=>{e.preventDefault();doClassEdit(fedit);};
