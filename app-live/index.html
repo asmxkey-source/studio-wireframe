@@ -708,7 +708,17 @@ async function doJoin(f){ const mid=f.dataset.mid; const d=Object.fromEntries(ne
 async function doPayment(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f)); const method=document.getElementById('method').dataset.v; const startMode=document.getElementById('start').dataset.v; const pass=DB.passes.find(p=>p.id===d.passId); if(!pass) return; const unpaid=method==='미납';
   const paidDate=d.paidDate||todayStr;
   const pay={id:uid(),memberId:mid,passId:pass.id,passName:pass.name,method:unpaid?'-':method,amount:pass.price,date:paidDate,status:unpaid?'unpaid':'paid',mpId:null};
-  if(!unpaid){ const start=startMode==='date'?(d.startDate||todayStr):null; const mp={id:uid(),memberId:mid,passId:pass.id,name:pass.name,scope:pass.scope,scopeCat:pass.scopeCat,total:pass.count,remaining:pass.count,status:start?'active':'pending',start:start,expire:start?addMonths(start,pass.months):null,months:pass.months}; const pend=DB.attendance.filter(a=>a.memberId===mid&&a.pending&&!a.trial); if(pend.length){ mp.status='active'; mp.start=pend[0].date; mp.expire=addMonths(pend[0].date,pass.months); pend.forEach(a=>{ if(mp.remaining>0){mp.remaining--; a.deducted=true; a.pending=false;} }); } DB.mpasses.push(mp); pay.mpId=mp.id; DB.payments.push(pay); await saveDB(); toast(pend.length?`납부 완료 · 출석 ${pend.length}건 소급 차감 → 잔여 ${mp.remaining}회`:'납부 완료 · 수강권 발급'); }
+  if(!unpaid){
+    const prevUn=DB.payments.find(x=>x.memberId===mid&&x.passId===pass.id&&x.status==='unpaid');
+    // 미납 전환으로 수강권이 이미 있는 경우: 기록만 납부 처리, 수강권 중복 발급 안 함
+    if(prevUn&&prevUn.mpId&&DB.mpasses.find(x=>x.id===prevUn.mpId)){
+      prevUn.method=method; prevUn.amount=pass.price; prevUn.date=paidDate; prevUn.status='paid';
+      await saveDB(); toast('미납 → 납부 처리 (기존 수강권 유지)'); go('#/member/'+mid); return;
+    }
+    const start=startMode==='date'?(d.startDate||todayStr):null; const mp={id:uid(),memberId:mid,passId:pass.id,name:pass.name,scope:pass.scope,scopeCat:pass.scopeCat,total:pass.count,remaining:pass.count,status:start?'active':'pending',start:start,expire:start?addMonths(start,pass.months):null,months:pass.months}; const pend=DB.attendance.filter(a=>a.memberId===mid&&a.pending&&!a.trial); if(pend.length){ mp.status='active'; mp.start=pend[0].date; mp.expire=addMonths(pend[0].date,pass.months); pend.forEach(a=>{ if(mp.remaining>0){mp.remaining--; a.deducted=true; a.pending=false;} }); } DB.mpasses.push(mp); pay.mpId=mp.id;
+    if(prevUn){ prevUn.method=method; prevUn.amount=pass.price; prevUn.date=paidDate; prevUn.status='paid'; prevUn.mpId=mp.id; }
+    else DB.payments.push(pay);
+    await saveDB(); toast(pend.length?`납부 완료 · 출석 ${pend.length}건 소급 차감 → 잔여 ${mp.remaining}회`:prevUn?'미납 → 납부 처리 · 수강권 발급':'납부 완료 · 수강권 발급'); }
   else { DB.payments.push(pay); await saveDB(); toast('미납 등록'); }
   go('#/member/'+mid);
 }
@@ -727,7 +737,13 @@ async function doDelAtt(id){ const a=DB.attendance.find(x=>x.id===id); if(!a) re
   DB.attendance=DB.attendance.filter(x=>x.id!==id);
   await saveDB(); toast('출석 기록 삭제'+(a.deducted?' · 1회 복구':'')); render(); }
 async function doDelPay(id){ const p=DB.payments.find(x=>x.id===id); if(!p) return;
-  if(!confirm('이 결제 기록을 삭제할까요?'+(p.mpId?' 연결된 수강권도 함께 삭제됩니다.':''))) return;
+  if(p.status==='paid'&&p.mpId&&DB.mpasses.find(x=>x.id===p.mpId)){
+    if(confirm('이 결제를 미납으로 전환할까요?\n\n[확인] 미납 전환 — 수강권은 유지되고, 수강료 탭 미납 목록에 기한(오늘+7일)으로 잡힙니다\n[취소] 전환 안 함 → 완전 삭제 여부를 이어서 물어봅니다')){
+      p.status='unpaid'; p.method='-'; p.date=addDays(todayStr,7);
+      await saveDB(); toast('미납으로 전환 · 수강권 유지'); render(); return;
+    }
+  }
+  if(!confirm('이 결제 기록을 완전히 삭제할까요?'+(p.mpId?' 연결된 수강권도 함께 삭제됩니다. (잘못 등록한 경우)':''))) return;
   DB.payments=DB.payments.filter(x=>x.id!==id);
   if(p.mpId) DB.mpasses=DB.mpasses.filter(x=>x.id!==p.mpId);
   await saveDB(); toast('결제 기록 삭제'); render(); }
