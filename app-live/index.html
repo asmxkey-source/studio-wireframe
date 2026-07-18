@@ -150,6 +150,8 @@ function render(){
   const isMb=h.startsWith('#/m/');
   // 코드 없으면: 강사=코드 생성 화면 / 회원=코드 안내
   if(!CODE){ document.getElementById('app').innerHTML='<div class="phone">'+(isMb?vJoinNeeded():vCreateStudio())+'</div>'; wire(); return; }
+  // 회원 역할은 강사 화면(환불·결제·회원 관리 등)에 접근 불가 — 주소 직접 입력도 차단
+  if(localStorage.getItem('role')==='member'&&!isMb){ location.hash='#/m/reserve'; return; }
   const seg=h.replace('#/','').split('/')[0]; const arg=h.replace('#/','').split('/')[1];
   let html='';
   if(isMb){ const m=curMember(h); const mseg=h.replace('#/m/','').split('/')[0]; const marg=h.replace('#/m/','').split('/')[1]; html=(m&&!m.joined)?vJoinMember():(m?({reserve:mReserve,classdt:mClassReserve,pass:mPass,usage:mUsage,profile:mProfile}[mseg]||mReserve)(m,marg):vJoinMember()); }
