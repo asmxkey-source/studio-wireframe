@@ -42,7 +42,6 @@
   table.cal td.sel { background:#dcdcdc; }
   table.cal td.blocked { background:repeating-linear-gradient(45deg,#f2f2f2,#f2f2f2 5px,#e0e0e0 5px,#e0e0e0 10px); }
   .hatch { background:repeating-linear-gradient(45deg,#eee,#eee 6px,#ddd 6px,#ddd 12px); border:1px dashed #999; border-radius:6px; padding:8px 10px; font-size:12px; color:#444; margin-bottom:8px; }
-  .synced { font-size:10px; color:#8a8; }
   .codebox { font-size:20px; font-weight:800; letter-spacing:3px; text-align:center; background:#f0f0f0; border:1px solid #bbb; border-radius:8px; padding:12px; margin:8px 0; }
   .banner { background:#fffbe6; border:1px solid #e0d48a; border-radius:8px; padding:10px; font-size:12px; margin-bottom:10px; }
 
@@ -54,7 +53,6 @@
   .topbar { background:var(--pt-blue); border-bottom:none; }
   .topbar .title { color:#fff; }
   .topbar .back { color:#fff; }
-  .synced { color:#9fb6e8; }
   .tabbar { background:#fff; border-top:1px solid #dfe5f0; }
   .tab { color:#696969; }
   .tab .ico { border-color:#B8B8B8; background:#fff; }
@@ -214,7 +212,7 @@ function render(){
 }
 
 // ===== 공통 =====
-function hdr(title,back){ return `<div class="topbar">${back?`<a class="back" href="${back}">←</a>`:'<div class="back"></div>'}<div class="title">${title}</div><div class="spacer synced">●연동</div></div>`; }
+function hdr(title,back){ return `<div class="topbar">${back?`<a class="back" href="${back}">←</a>`:'<div class="back"></div>'}<div class="title">${title}</div><div class="spacer"></div></div>`; }
 function tabbar(a){ const t=[['timetable','시간표·예약'],['classAdd','수업 등록'],['members','회원'],['passes','수강권'],['tuition','수강료']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
 function mtab(a){ const t=[['reserve','수업 예약'],['pass','수강권'],['usage','이용내역'],['profile','내 정보']]; return `<div class="tabbar">${t.map(([k,l])=>`<a class="tab ${a===k?'active':''}" href="#/m/${k}"><span class="ico"></span>${l}</a>`).join('')}</div>`; }
 
