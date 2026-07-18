@@ -387,13 +387,19 @@ function vClassAdd(){
   <button class="btn" type="submit">수업 등록</button></form>
   ${(()=>{ const groups=new Map();
     DB.classes.forEach(c=>{ const k=c.seriesId||('single-'+c.id); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(c); });
-    const rows=[...groups.values()].map(list=>{ list.sort((a,b)=>a.date<b.date?-1:1);
+    const all=[...groups.values()].map(list=>{ list.sort((a,b)=>a.date<b.date?-1:1);
       const fut=list.filter(c=>c.date>=todayStr); const rep=fut[0]||list[list.length-1];
       const days=rep.seriesId?[...new Set(list.map(c=>WD[dow(c.date)]))].join('·'):null;
       return {rep,futCnt:fut.length,days,nextDate:fut[0]?fut[0].date:null};
-    }).sort((a,b)=>((a.nextDate||'9999')+(a.rep.time||''))<((b.nextDate||'9999')+(b.rep.time||''))?-1:1);
-    if(!rows.length) return '';
-    return `<div class="section-title">운영 중인 수업 ${rows.length}</div><div class="hint" style="margin:-4px 0 6px">탭하면 ${rows.some(r=>r.nextDate)?'다음 회차의 ':''}수업 상세로 이동 · '남은 회차 0'은 앞으로 열릴 회차가 없다는 뜻 — 계속 운영하려면 위에서 다시 등록하세요</div>`+rows.map((r,i)=>`<a class="list-item" href="#/class/${r.rep.id}"><span class="grow"><span class="num">${i+1}</span>${esc(r.rep.name)} <span class="tag ${r.rep.category==='group'?'dark':''}">${r.rep.category==='group'?'그룹':'개인'}</span><br><span class="sub">${r.rep.seriesId?'매주 '+r.days:'단건 '+md(r.rep.date)} ${r.rep.time||''}${r.nextDate?' · 다음 회차 '+md(r.nextDate):''}</span></span>${r.futCnt?`<span class="sub">남은 회차 ${r.futCnt}</span>`:'<span class="tag warn">남은 회차 0</span>'}</a>`).join('');
+    });
+    const act=all.filter(r=>r.futCnt>0).sort((a,b)=>((a.nextDate||'')+(a.rep.time||''))<((b.nextDate||'')+(b.rep.time||''))?-1:1);
+    const ended=all.filter(r=>!r.futCnt).sort((a,b)=>a.rep.date<b.rep.date?1:-1).slice(0,5);
+    if(!act.length&&!ended.length) return '';
+    const row=(r,i)=>`<a class="list-item" href="#/class/${r.rep.id}"><span class="grow"><span class="num">${i+1}</span>${esc(r.rep.name)} <span class="tag ${r.rep.category==='group'?'dark':''}">${r.rep.category==='group'?'그룹':'개인'}</span><br><span class="sub">${r.rep.seriesId?'매주 '+r.days:'단건 '+md(r.rep.date)} ${r.rep.time||''}${r.nextDate?' · 다음 회차 '+md(r.nextDate):''}</span></span>${r.futCnt?`<span class="sub">남은 회차 ${r.futCnt}</span>`:'<span class="tag warn">회차 소진</span>'}</a>`;
+    let h='<div style="border-top:1px solid #dfe5f0;margin:24px 0 0"></div>';
+    if(act.length) h+=`<div class="section-title">운영 중인 수업 ${act.length}</div><div class="hint" style="margin:-4px 0 6px">탭하면 다음 회차의 수업 상세로 이동</div>`+act.map(row).join('');
+    if(ended.length) h+=`<div class="section-title">종료된 수업 (회차 소진) ${ended.length}</div><div class="hint" style="margin:-4px 0 6px">앞으로 열릴 회차가 없는 수업${all.filter(r=>!r.futCnt).length>5?' · 최근 5개만 표시':''} — 계속 운영하려면 위에서 다시 등록하세요</div>`+ended.map(row).join('');
+    return h;
   })()}
   <div class="section-title">예약 불가</div>
   <a class="btn ghost" href="#/blockAdd">설정 (휴가, 개인 일정 등)</a></div>`+tabbar('classAdd'); }
