@@ -513,7 +513,7 @@ function wire(){
   document.querySelectorAll('input.money').forEach(inp=>{ inp.oninput=()=>{ const digits=inp.value.replace(/[^0-9]/g,''); inp.value=digits?Number(digits).toLocaleString('ko-KR'):''; }; });
   // 수업 등록: 강의 선택 → 직접입력 토글
   const clsPass=document.getElementById('clsPass'); const cb=document.getElementById('customBlock');
-  if(clsPass&&cb){ const upd=()=>{ cb.style.display = clsPass.value==='custom' ? 'block' : 'none'; }; clsPass.onchange=upd; if(clsPass.value==='custom'||!DB.passes.length){ clsPass.value='custom'; } upd(); }
+  if(clsPass&&cb){ const upd=()=>{ cb.style.display = clsPass.value==='custom' ? 'block' : 'none'; }; clsPass.onchange=()=>{ upd(); if(clsPass.value==='custom'){ const c=document.querySelector('[name=cname]'); if(c) setTimeout(()=>c.focus(),50); } }; if(clsPass.value==='custom'||!DB.passes.length){ clsPass.value='custom'; } upd(); }
   const fclass=document.getElementById('fclass'); if(fclass) fclass.onsubmit=e=>{e.preventDefault();doClassAdd(fclass);};
   // 반복 설정 토글
   const rep=document.getElementById('rep'); const repBlock=document.getElementById('repBlock');
