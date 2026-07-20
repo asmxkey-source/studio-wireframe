@@ -182,11 +182,11 @@ function memberPasses(mid){ return DB.mpasses.filter(p=>p.memberId===mid); }
 function memberStatus(mid){
   const ps=memberPasses(mid).filter(p=>p.status!=='refunded');
   const active=ps.find(p=>p.status==='active'&&p.remaining>0&&p.expire>=todayStr);
-  if(active){ const soon=active.remaining<=1||active.expire<=addDays(todayStr,7); return soon?'만료 예정':'활성'; }
+  if(active){ const soon=active.remaining<=1||active.expire<=addDays(todayStr,7); return soon?'만료 예정':'수강 중'; }
   if(ps.some(p=>p.status==='pending')) return '개시 대기';
   if(DB.payments.some(p=>p.memberId===mid&&p.status==='unpaid')) return '미납';
   if(ps.length) return '만료';
-  return '신규';
+  return '미등록';
 }
 function usablePass(mid,cat){ return memberPasses(mid).filter(p=>p.status==='active'&&p.remaining>0&&(!p.expire||p.expire>=todayStr)&&(p.scope==='all'||p.scopeCat===cat)).sort((a,b)=>a.expire<b.expire?-1:1)[0]; }
 function pendingPass(mid,cat){ return memberPasses(mid).find(p=>p.status==='pending'&&(p.scope==='all'||p.scopeCat===cat)); }
@@ -263,7 +263,7 @@ function vPassAdd(){ return hdr('수강권 추가','#/passes')+`<div class="cont
   <div class="field"><label>금액(원) <span class="req">*</span></label><input class="input money" name="price" type="text" inputmode="numeric" placeholder="440,000" required><div class="hint">회원 1인이 결제하는 금액 (예: 10회에 440,000원)</div></div>
   <button class="btn" type="submit">수강권 등록</button></form></div>`+tabbar('passes'); }
 function vMembers(){ return hdr('회원 관리')+`<div class="content">${DB.members.length?(()=>{
-  const order=[['활성','var(--pt-blue)'],['개시 대기','#7f97cf'],['신규','#c6d1e8'],['만료','#B8B8B8'],['만료 예정','#f2b5a4'],['미납','#EB5127']];
+  const order=[['수강 중','var(--pt-blue)'],['개시 대기','#7f97cf'],['미등록','#c6d1e8'],['만료','#B8B8B8'],['만료 예정','#f2b5a4'],['미납','#EB5127']];
   const cnt={}; DB.members.forEach(m=>{const s=memberStatus(m.id); cnt[s]=(cnt[s]||0)+1;});
   const total=DB.members.length;
   const segs=order.filter(([k])=>cnt[k]).map(([k,c])=>`<div style="width:${(cnt[k]/total*100).toFixed(1)}%;background:${c}"></div>`).join('');
