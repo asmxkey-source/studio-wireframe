@@ -357,17 +357,33 @@ function vClassEdit(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vT
   <div class="hint">요일·날짜 변경은 폐강 후 다시 등록해주세요.</div>
   <button class="btn" type="submit">저장</button></form></div>`+tabbar('timetable');
 }
+function classListSection(){
+  const groups=new Map();
+  DB.classes.forEach(c=>{ const k=c.seriesId||('single-'+c.id); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(c); });
+  const all=[...groups.values()].map(list=>{ list.sort((a,b)=>a.date<b.date?-1:1);
+    const fut=list.filter(c=>c.date>=todayStr); const rep=fut[0]||list[list.length-1];
+    const days=rep.seriesId?[...new Set(list.map(c=>WD[dow(c.date)]))].join('·'):null;
+    return {rep,futCnt:fut.length,days,nextDate:fut[0]?fut[0].date:null};
+  });
+  const act=all.filter(r=>r.futCnt>0).sort((a,b)=>((a.nextDate||'')+(a.rep.time||''))<((b.nextDate||'')+(b.rep.time||''))?-1:1);
+  const ended=all.filter(r=>!r.futCnt).sort((a,b)=>a.rep.date<b.rep.date?1:-1).slice(0,5);
+  if(!act.length&&!ended.length) return '';
+  const row=(r,i)=>{ const lp=r.rep.passId?DB.passes.find(p=>p.id===r.rep.passId):null; const showLp=lp&&lp.name!==r.rep.name;
+    return `<a class="list-item" href="#/class/${r.rep.id}"><span class="grow"><span class="num">${i+1}</span>${esc(r.rep.name)} <span class="tag ${r.rep.category==='group'?'dark':''}">${r.rep.category==='group'?'그룹':'개인'}</span><br><span class="sub">${r.rep.seriesId?'매주 '+r.days:'단건 '+md(r.rep.date)} ${r.rep.time||''}${r.nextDate?' · 다음 회차 '+md(r.nextDate):''}${showLp?'<br>수강권: '+esc(lp.name):''}</span></span>${r.futCnt?`<span class="sub">남은 회차 ${r.futCnt}</span>`:'<span class="tag warn">회차 소진</span>'}</a>`; };
+  let h='<div style="border-top:1px solid #dfe5f0;margin:24px 0 0"></div>';
+  if(act.length) h+=`<div class="section-title">운영 중인 수업 ${act.length}</div><div class="hint" style="margin:-4px 0 6px">탭하면 다음 회차의 수업 상세로 이동</div>`+act.map(row).join('');
+  if(ended.length) h+=`<div class="section-title">종료된 수업 (회차 소진) ${ended.length}</div><div class="hint" style="margin:-4px 0 6px">앞으로 열릴 회차가 없는 수업${all.filter(r=>!r.futCnt).length>5?' · 최근 5개만 표시':''} — 계속 운영하려면 위에서 다시 등록하세요</div>`+ended.map(row).join('');
+  return h;
+}
 function vClassAdd(){
+  if(!DB.passes.length) return hdr('수업 등록','#/timetable')+`<div class="content"><div class="empty">수업은 항상 수강권에 연결되어 만들어집니다.<br>먼저 수강권을 만들어 주세요.<br><a class="btn" href="#/passAdd" style="margin-top:12px">＋ 수강권 만들기</a></div>${classListSection()}</div>`+tabbar('classAdd');
   const opts=DB.passes.map(p=>`<option value="${p.id}">(${p.category==='group'?'그룹':'개인'}) ${esc(p.name)}</option>`).join('');
   return hdr('수업 등록','#/timetable')+`<div class="content"><form id="fclass">
   <div class="field"><label>강의 선택 <span class="req">*</span></label>
-    <span style="position:relative;display:block"><select class="input" id="clsPass" name="passId" style="width:100%;appearance:none;-webkit-appearance:none;padding-right:28px">${opts}<option value="custom">＋ 직접 입력 (교차 수강용 수업 · 체험 등)</option></select><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:#696969">▼</span></span>
-    <div class="hint">수강권과 수업명이 같으면 → 위에서 선택(자동 입력). 20회권처럼 여러 수업에 두루 쓰는 수강권이면 → '직접 입력'으로 수업명을 각각 등록하세요. 어느 쪽이든 예약·차감은 동일하게 작동합니다.</div>
+    <span style="position:relative;display:block"><select class="input" id="clsPass" name="passId" style="width:100%;appearance:none;-webkit-appearance:none;padding-right:28px">${opts}</select><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:#696969">▼</span></span>
+    <div class="hint">이 수업으로 예약·차감될 수강권 — 수업은 항상 수강권에 연결됩니다</div>
   </div>
-  <div id="customBlock" style="display:none">
-    <div class="field"><label>카테고리</label><div class="seg" id="cat" data-v="group"><a class="on" data-v="group">그룹</a><a data-v="personal">개인</a></div></div>
-    <div class="field"><label>수업명</label><input class="input" name="cname" placeholder="필라테스 초급"></div>
-  </div>
+  <div class="field"><label>수업명 <span class="req">*</span></label><input class="input" name="cname" value="${esc(DB.passes[0].name)}" required><div class="hint">수강권명이 자동 입력됩니다. 한 수강권으로 여러 수업(예: 요가·필라테스)을 열려면 이름만 바꿔 각각 등록하세요 — 연결은 유지됩니다</div></div>
   <div class="row"><div class="field"><label>날짜 <span class="req">*</span></label><input class="input" name="date" type="date" value="${TT.sel||todayStr}" required><div class="hint">시간표에서 날짜를 탭해두면 자동 입력</div></div><div class="field"><label>시간 <span class="req">*</span></label><input class="input" name="time" placeholder="10:00" required></div></div>
   <div class="row"><div class="field"><label>정원 <span class="req">*</span></label><input class="input" name="capacity" type="number" inputmode="numeric" min="1" value="6" required></div><div class="field"><label>장소</label><input class="input" name="place" placeholder="스튜디오 A"></div></div>
   <div class="field"><label>반복</label><div class="seg" id="rep" data-v="none"><a class="on" data-v="none">반복 안 함</a><a data-v="weekly">매주 반복</a></div></div>
@@ -385,25 +401,10 @@ function vClassAdd(){
     <div class="hint">예약 불가 기간과 겹치는 회차는 자동으로 건너뜁니다.</div>
   </div>
   <button class="btn" type="submit">수업 등록</button></form>
-  ${(()=>{ const groups=new Map();
-    DB.classes.forEach(c=>{ const k=c.seriesId||('single-'+c.id); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(c); });
-    const all=[...groups.values()].map(list=>{ list.sort((a,b)=>a.date<b.date?-1:1);
-      const fut=list.filter(c=>c.date>=todayStr); const rep=fut[0]||list[list.length-1];
-      const days=rep.seriesId?[...new Set(list.map(c=>WD[dow(c.date)]))].join('·'):null;
-      return {rep,futCnt:fut.length,days,nextDate:fut[0]?fut[0].date:null};
-    });
-    const act=all.filter(r=>r.futCnt>0).sort((a,b)=>((a.nextDate||'')+(a.rep.time||''))<((b.nextDate||'')+(b.rep.time||''))?-1:1);
-    const ended=all.filter(r=>!r.futCnt).sort((a,b)=>a.rep.date<b.rep.date?1:-1).slice(0,5);
-    if(!act.length&&!ended.length) return '';
-    const row=(r,i)=>`<a class="list-item" href="#/class/${r.rep.id}"><span class="grow"><span class="num">${i+1}</span>${esc(r.rep.name)} <span class="tag ${r.rep.category==='group'?'dark':''}">${r.rep.category==='group'?'그룹':'개인'}</span><br><span class="sub">${r.rep.seriesId?'매주 '+r.days:'단건 '+md(r.rep.date)} ${r.rep.time||''}${r.nextDate?' · 다음 회차 '+md(r.nextDate):''}</span></span>${r.futCnt?`<span class="sub">남은 회차 ${r.futCnt}</span>`:'<span class="tag warn">회차 소진</span>'}</a>`;
-    let h='<div style="border-top:1px solid #dfe5f0;margin:24px 0 0"></div>';
-    if(act.length) h+=`<div class="section-title">운영 중인 수업 ${act.length}</div><div class="hint" style="margin:-4px 0 6px">탭하면 다음 회차의 수업 상세로 이동</div>`+act.map(row).join('');
-    if(ended.length) h+=`<div class="section-title">종료된 수업 (회차 소진) ${ended.length}</div><div class="hint" style="margin:-4px 0 6px">앞으로 열릴 회차가 없는 수업${all.filter(r=>!r.futCnt).length>5?' · 최근 5개만 표시':''} — 계속 운영하려면 위에서 다시 등록하세요</div>`+ended.map(row).join('');
-    return h;
-  })()}
+  ${classListSection()}
   <div class="section-title">예약 불가</div>
   <a class="btn ghost" href="#/blockAdd">설정 (휴가, 개인 일정 등)</a></div>`+tabbar('classAdd'); }
-function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=occRes(id); const hasBooked=rs.some(r=>r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map((r,i)=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);const pp=up?null:pendingPass(r.memberId,c.category);const done=r.status==='done';return `<div class="list-item">${done?'<span style="width:20px;flex-shrink:0;text-align:center">✓</span>':`<input type="checkbox" class="rchk" data-mid="${r.memberId}" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--pt-blue)">`}<span class="grow"><span class="num">${i+1}</span>${esc(m.name)}${done?' <span class="tag">출석 완료</span>':''}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':pp?esc(pp.name)+' · 개시 대기 (첫 출석 시 시작)':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}
+function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=occRes(id); const hasBooked=rs.some(r=>r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}${(()=>{const lp=c.passId?DB.passes.find(p=>p.id===c.passId):null;return lp?'<br>수강권: '+esc(lp.name):'';})()}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?rs.map((r,i)=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=usablePass(r.memberId,c.category);const pp=up?null:pendingPass(r.memberId,c.category);const done=r.status==='done';return `<div class="list-item">${done?'<span style="width:20px;flex-shrink:0;text-align:center">✓</span>':`<input type="checkbox" class="rchk" data-mid="${r.memberId}" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--pt-blue)">`}<span class="grow"><span class="num">${i+1}</span>${esc(m.name)}${done?' <span class="tag">출석 완료</span>':''}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':pp?esc(pp.name)+' · 개시 대기 (첫 출석 시 시작)':'수강권 없음 · 결제 전'}</span></span></div>`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}
 ${hasBooked?`<div id="cancelBox" style="display:none;margin-top:8px">${c.seriesId?`<div class="seg" id="cancelScope" data-v="one" style="margin-bottom:6px"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 모두</a></div>`:''}<a class="btn ghost" id="bulkCancel" data-cid="${id}">선택 0건 예약 취소</a></div>`:''}
 ${(()=>{ const holds=mid=>!c.passId||DB.mpasses.some(p=>p.memberId===mid&&p.passId===c.passId&&(p.status==='pending'||(p.status==='active'&&p.remaining>0&&(!p.expire||p.expire>=todayStr))))||DB.payments.some(p=>p.memberId===mid&&p.status==='unpaid'&&p.passId===c.passId); const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)&&holds(m.id)); const full=rs.length>=c.capacity; if(full) return '<div class="hint">정원 마감 — 예약 추가 불가</div>'; if(!avail.length) return c.passId?'<div class="hint">이 수업의 수강권을 보유한 회원이 없습니다 — 결제 전 회원은 [시간표·예약]의 \'회원 수업 예약\'에서</div>':''; return `<div class="field" style="margin-top:10px"><label>회원 수업 예약</label>${c.seriesId?`<div class="seg" id="bookScope" data-v="one" style="margin-bottom:6px"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 반복<br>(고정 수강)</a></div><div class="hint" style="margin:0 0 6px">교차 수강 등 요일을 골라 다니면 → '이 회차만'. 매주 이 요일에 고정으로 다니면 → '이후 회차 반복'</div>`:''}<div class="row"><span style="position:relative;flex:1"><select class="input" id="bookSel" style="width:100%;appearance:none;-webkit-appearance:none;padding-right:28px">${avail.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:#696969">▼</span></span><a class="btn ghost" id="trainerBook" data-cid="${id}" style="flex:0 0 80px;margin:0">추가</a></div>${c.passId?'<div class="hint" style="margin-top:4px">이 수업의 수강권을 보유한 회원만 표시됩니다</div>':''}</div>`; })()}
 ${hasBooked?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석 체크</a>`:''}${c.seriesId?'<div class="note" style="margin-top:8px">🔁 매주 반복 수업</div>':''}<a class="btn ghost" href="#/classEdit/${id}" style="margin-top:12px">수업 정보 수정</a><div class="section-title">폐강 처리</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">삭제</a>`}</div>`+tabbar('timetable'); }
@@ -518,8 +519,8 @@ function wire(){
   // 금액 콤마 자동
   document.querySelectorAll('input.money').forEach(inp=>{ inp.oninput=()=>{ const digits=inp.value.replace(/[^0-9]/g,''); inp.value=digits?Number(digits).toLocaleString('ko-KR'):''; }; });
   // 수업 등록: 강의 선택 → 직접입력 토글
-  const clsPass=document.getElementById('clsPass'); const cb=document.getElementById('customBlock');
-  if(clsPass&&cb){ const upd=()=>{ cb.style.display = clsPass.value==='custom' ? 'block' : 'none'; }; clsPass.onchange=()=>{ upd(); if(clsPass.value==='custom'){ const c=document.querySelector('[name=cname]'); if(c) setTimeout(()=>c.focus(),50); } }; if(clsPass.value==='custom'||!DB.passes.length){ clsPass.value='custom'; } upd(); }
+  const clsPass=document.getElementById('clsPass'); const cnameIn=document.querySelector('#fclass [name=cname]');
+  if(clsPass&&cnameIn){ clsPass.onchange=()=>{ const p=DB.passes.find(x=>x.id===clsPass.value); if(p) cnameIn.value=p.name; }; }
   const fclass=document.getElementById('fclass'); if(fclass) fclass.onsubmit=e=>{e.preventDefault();doClassAdd(fclass);};
   // 반복 설정 토글
   const rep=document.getElementById('rep'); const repBlock=document.getElementById('repBlock');
@@ -673,9 +674,8 @@ async function handleForm(hash,d){
 }
 async function doClassAdd(f){
   const d=Object.fromEntries(new FormData(f)); const passId=document.getElementById('clsPass').value;
-  let category,name,linkPass=null;
-  if(passId==='custom'){ category=document.getElementById('cat').dataset.v; name=(d.cname||'').trim(); if(!name){ toast('수업명을 입력하세요'); return; } }
-  else { const p=DB.passes.find(x=>x.id===passId); if(!p){ toast('강의를 선택하세요'); return; } category=p.category; name=p.name; linkPass=p.id; }
+  const p=DB.passes.find(x=>x.id===passId); if(!p){ toast('강의(수강권)를 선택하세요'); return; }
+  const category=p.category, linkPass=p.id, name=(d.cname||'').trim()||p.name;
   const cap=category==='personal'?1:+d.capacity;
   const repMode=(document.getElementById('rep')||{}).dataset?document.getElementById('rep').dataset.v:'none';
   if(repMode!=='weekly'){
