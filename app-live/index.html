@@ -238,6 +238,7 @@ function guideCards(){
 function occRes(cid){ return DB.reservations.filter(r=>r.classId===cid&&(r.status==='booked'||r.status==='done')); }
 function classBlock(c){ const rc=occRes(c.id).length; return `<a class="classblock ${c.category==='personal'?'personal':''}" href="#/class/${c.id}"><span class="t">${c.time}</span> <span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span><div class="n">${esc(c.name)}</div><div class="meta">예약 ${rc}/${c.capacity}${rc>=c.capacity?' · 마감':' · 잔여 '+(c.capacity-rc)}</div></a>`; }
 function vPasses(){ return hdr('수강권 관리')+`<div class="content">${DB.passes.length?DB.passes.map(p=>`<div class="card"><span style="float:right;font-size:11px"><a href="#/passEdit/${p.id}" style="color:#888;text-decoration:underline">수정</a> · <a data-delproduct="${p.id}" style="color:#888;text-decoration:underline">삭제</a></span><span class="tag ${p.category==='group'?'dark':''}">${p.category==='group'?'그룹':'개인'}</span> <b>${esc(p.name)}</b><div class="note" style="margin:0">${won(p.price)}원 · 유효 ${p.months}개월 · 회당 ${won(Math.round(p.price/p.count))}원 · ${p.scope==='all'?'전체 수업':'특정 수업'}</div></div>`).join(''):'<div class="empty">등록된 수강권이 없습니다</div>'}<a class="btn" href="#/passAdd" style="margin-top:12px">＋ 수강권 추가</a>
+<div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
 <div class="section-title">회원 초대</div>
 <div class="banner"><b>공통 초대 링크</b> — 단톡방·카톡에 뿌리면 여러 명이 각자 가입합니다 (스튜디오 코드 ${CODE})<div class="codebox" style="font-size:12px;letter-spacing:0;word-break:break-all">${location.origin+location.pathname+'?s='+CODE+'&join=new'}</div><a class="btn ghost" id="copyInvite" style="margin-top:6px">공통 초대 링크 복사</a><div class="hint" style="margin-top:6px">특정 회원만 콕 집어 초대하려면 → 회원 탭에서 등록 후 회원 상세의 '개별 초대 링크' 사용</div></div>
 </div>`+tabbar('passes'); }
@@ -445,10 +446,12 @@ function vTuition(){
     <div class="prog"><div style="width:${pct}%"></div></div>
     <div class="hint">막대 = 전체 중 납부 비율 ${pct}%</div>
   </div>
+  <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
   <div class="section-title">만료 예정 ${expM.length}</div>
   ${expM.length?expM.map((m,i)=>{const ap=memberPasses(m.id).find(p=>p.status==='active');return `<a class="list-item" href="#/member/${m.id}"><span class="thumb"></span><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회 · ~'+md(ap.expire):''}</span></span><span class="arrow">›</span></a>`;}).join(''):'<div class="hint" style="margin:0 0 8px">만료 예정 회원 없음</div>'}
   <div class="section-title">미납 ${unpaid.length}</div>
   ${unpaid.length?unpaid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<a class="list-item" href="#/member/${p.memberId}"><span class="thumb"></span><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${esc(p.passName)} (${won(p.amount)}원)<br>기한 ${md(p.date)}</span></span><span class="badge">결제</span></a>`;}).join(''):'<div class="empty">미납 없음</div>'}
+  <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
   ${refunds.length?`<div class="section-title">환불 ${refunds.length}</div>${refunds.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)} · ${esc(p.passName)} (<span style="color:#EB5127">−${won(p.amount)}원</span>)<br><span class="sub">환불 (${md(p.date)})</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`;}).join('')}`:''}
   <div class="section-title">최근 납부 ${paid.length}</div>
   ${paid.length?paid.map((p,i)=>{const m=DB.members.find(x=>x.id===p.memberId)||{};return `<div class="list-item"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)} · ${esc(p.passName)} (${won(p.amount)}원)<br><span class="sub">${p.method} (${md(p.date)})</span></span><a data-delpay="${p.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`;}).join(''):'<div class="empty">없음</div>'}
