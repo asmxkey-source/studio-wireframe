@@ -10,7 +10,6 @@
   .rolebar { max-width:375px; margin:0 auto; display:flex; gap:6px; padding:8px; background:#333; align-items:center; }
   .rolebar a { flex:1; text-align:center; padding:8px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:700; color:#ccc; background:#444; }
   .rolebar a.on { background:#fff; color:#111; }
-  .rolebar .reset { flex:0 0 auto; background:transparent; color:#bbb; font-weight:400; font-size:11px; padding:8px 4px; }
   input.input, select.input, textarea.input { -webkit-appearance:none; appearance:none; background:#fff; font-size:16px; font-family:inherit; }
   .toast { position:fixed; left:50%; bottom:80px; transform:translateX(-50%); background:#111; color:#fff; padding:10px 16px; border-radius:20px; font-size:13px; z-index:99; opacity:0; transition:opacity .2s; max-width:340px; text-align:center; }
   .toast.show { opacity:1; }
@@ -102,7 +101,6 @@
 <div id="devbar" style="display:none;max-width:375px;margin:0 auto;background:#333;padding:6px;gap:6px;justify-content:center;font-size:11px">
   <a id="sw-tr" style="color:#ccc;text-decoration:none;padding:4px 8px;background:#444;border-radius:5px;margin:0 3px">강사 화면</a>
   <a id="sw-mb" style="color:#ccc;text-decoration:none;padding:4px 8px;background:#444;border-radius:5px;margin:0 3px">회원 화면</a>
-  <a id="reset" style="color:#bbb;text-decoration:none;padding:4px 8px;margin:0 3px">초기화</a>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -198,7 +196,6 @@ function canUseClass(mid,c){ if(!c.passId) return true; return !!classPass(mid,c
 // ===== 라우팅 =====
 function go(h){ location.hash=h; }
 window.addEventListener('hashchange',render);
-document.getElementById('reset').onclick=()=>{ if(confirm('이 스튜디오의 모든 데이터를 지울까요? (연결된 모든 폰에서 사라집니다)')){ DB=empty(); saveDB(); toast('초기화'); }};
 
 function render(){
   if(!ready){ return; }
