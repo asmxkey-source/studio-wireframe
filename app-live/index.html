@@ -70,6 +70,8 @@
   .tag.st-expiring { background:#E9F5EE; border-color:#9FCDB2; color:#2F8A55; }
   .tag.st-expired { background:#B8B8B8; border-color:#B8B8B8; color:#fff; }
   .tag.st-none { background:#f4f4f4; border-color:#c9c9c9; color:#696969; }
+  .chip.st-active, .chip.st-pending, .chip.st-unpaid, .chip.st-expiring, .chip.st-expired, .chip.st-none { border-width:1px; }
+  .chip.fsel { box-shadow:0 0 0 2px #373737; font-weight:700; }
   .badge { background:#EB5127; color:#fff; }
   .section-title { color:#373737; }
   .note, .hint, .list-item .sub { color:#696969; }
@@ -148,6 +150,7 @@ const _now=new Date();
 const todayStr=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
 // 시간표 뷰 상태
 let TT={ view: localStorage.getItem('ttView')||'week', ref:todayStr, sel:todayStr };
+let MEMF={ st:'', q:'' }; // 회원 관리 필터 (상태 칩 / 이름 검색)
 // 일괄 예약 선택 회원
 let BULK=[];
 
@@ -274,7 +277,20 @@ function vMembers(){ return hdr('회원 관리')+`<div class="content">${DB.memb
   const segs=order.filter(([k])=>cnt[k]).map(([k,c])=>`<div style="width:${(cnt[k]/total*100).toFixed(1)}%;background:${c}"></div>`).join('');
   const legend=order.filter(([k])=>cnt[k]).map(([k])=>`${k} <b>${cnt[k]}</b>`).join(' · ');
   return `<div class="card"><b>회원 요약</b><div class="note" style="margin:6px 0 4px">전체 <b>${total}명</b> — ${legend}</div><div style="display:flex;height:14px;border:1px solid var(--pt-blue-bd);border-radius:7px;overflow:hidden;background:var(--pt-blue-bg)">${segs}</div></div>`;
-})():''}<div style="margin-bottom:8px"><span class="hint">수업 예약은 [시간표·예약] 탭의 '회원 수업 예약'에서</span></div>${DB.members.length?DB.members.map((m,i)=>{const st=memberStatus(m.id);const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<div class="list-item"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer"><span class="num">${i+1}</span>${esc(m.name)} <span class="tag ${stClass(st)}">${st}</span><br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}<br>${m.phone}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">등록된 회원이 없습니다</div>'}<a class="btn" href="#/memberAdd" style="margin-top:12px">＋ 회원 등록 · 초대</a></div>`+tabbar('members'); }
+})():''}<div style="margin-bottom:8px"><span class="hint">수업 예약은 [시간표·예약] 탭의 '회원 수업 예약'에서</span></div>${DB.members.length?(()=>{
+  const rows=DB.members.map(m=>({m,st:memberStatus(m.id)}));
+  const cnt={}; rows.forEach(x=>{cnt[x.st]=(cnt[x.st]||0)+1;});
+  const chips=`<input class="input" id="memQ" placeholder="이름 검색" value="${esc(MEMF.q)}" style="margin-bottom:8px">
+  <div style="display:flex;flex-wrap:wrap;gap:4px;margin:0 0 10px">
+    <a class="chip ${!MEMF.st?'fsel':''}" data-stf="">전체 ${rows.length}</a>
+    ${['수강 중','시작 전','미납','만료 예정','만료','미등록'].filter(k=>cnt[k]).map(k=>`<a class="chip ${stClass(k)} ${MEMF.st===k?'fsel':''}" data-stf="${k}">${k} ${cnt[k]}</a>`).join('')}
+  </div>`;
+  let list=rows;
+  if(MEMF.st) list=list.filter(x=>x.st===MEMF.st);
+  const q=MEMF.q.trim(); if(q) list=list.filter(x=>x.m.name.includes(q));
+  const items=list.length?list.map((x,i)=>{const m=x.m,st=x.st;const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<div class="list-item"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer"><span class="num">${i+1}</span>${esc(m.name)} <span class="tag ${stClass(st)}">${st}</span><br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}<br>${m.phone}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">조건에 맞는 회원이 없습니다</div>';
+  return chips+items;
+})():'<div class="empty">등록된 회원이 없습니다</div>'}<a class="btn" href="#/memberAdd" style="margin-top:12px">＋ 회원 등록 · 초대</a></div>`+tabbar('members'); }
 function vBookSelect(){ return hdr('회원 수업 예약','#/timetable')+`<div class="content"><div class="note" style="margin-bottom:8px">예약할 회원을 선택하세요.</div><div style="margin-bottom:8px;display:flex;align-items:center;gap:8px"><span class="tag dark">전체 ${DB.members.length}</span> ${DB.members.length?`<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;cursor:pointer"><input type="checkbox" id="mchkAll" style="width:16px;height:16px;accent-color:var(--pt-blue)">전체 선택</label>`:''}</div>${DB.members.length?DB.members.map((m,i)=>{const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<label class="list-item" style="cursor:pointer"><input type="checkbox" class="mchk" data-mid="${m.id}" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--pt-blue)"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}</span></span></label>`;}).join(''):'<div class="empty">등록된 회원이 없습니다.<br><a class="btn" href="#/memberAdd" style="margin-top:10px">＋ 회원 등록</a></div>'}<a class="btn" id="bulkBook" style="display:none;margin-top:12px">다음 (선택한 0명이 예약할 수업 선택)</a></div>`+tabbar('timetable'); }
 function vBookFor(){
   if(!BULK.length) return vBookSelect();
@@ -580,6 +596,9 @@ function wire(){
   if(chks.length&&bb){ const upd=()=>{ const n=chks.filter(c=>c.checked).length; bb.style.display=n?'block':'none'; bb.textContent='다음 (선택한 '+n+'명이 예약할 수업 선택)'; if(chkAll) chkAll.checked=(n===chks.length); }; chks.forEach(c=>c.onchange=upd); bb.onclick=()=>{ BULK=chks.filter(c=>c.checked).map(c=>c.dataset.mid); if(BULK.length) go('#/bookFor'); };
     if(chkAll) chkAll.onchange=()=>{ chks.forEach(c=>c.checked=chkAll.checked); upd(); }; }
   document.querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>go(el.dataset.go));
+  document.querySelectorAll('[data-stf]').forEach(ch=>ch.onclick=()=>{ MEMF.st=(MEMF.st===ch.dataset.stf)?'':ch.dataset.stf; render(); });
+  const memQ=document.getElementById('memQ');
+  if(memQ) memQ.oninput=()=>{ MEMF.q=memQ.value; render(); const nq=document.getElementById('memQ'); if(nq){ nq.focus(); nq.setSelectionRange(nq.value.length,nq.value.length); } };
   // 수업 선택: 체크박스 다중 선택 → 하단 확정 버튼
   const cchks=[...document.querySelectorAll('.cchk')]; const confirmBtn=document.getElementById('confirmBulkBook');
   if(cchks.length&&confirmBtn){
