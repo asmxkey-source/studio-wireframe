@@ -63,13 +63,13 @@
   .tag { background:var(--pt-blue-bg); border-color:var(--pt-blue-bd); color:var(--pt-blue); }
   .tag.dark { background:var(--pt-blue); border-color:var(--pt-blue); color:#fff; }
   .tag.warn { background:#EB5127; border-color:#EB5127; color:#fff; }
-  /* 회원 상태 3색 체계: 파랑=정상 / 초록=돈 관련 조치 / 회색=비활성 (채움=강, 테두리=약) */
-  .tag.st-active { background:var(--pt-blue); border-color:var(--pt-blue); color:#fff; }
+  /* 회원 상태 3색 체계: 파랑=정상 / 초록=돈 관련 조치 / 회색=비활성. 전부 옅은 스타일(연한 배경+색 글자), 그룹 내 강약은 테두리 진하기로 */
+  .tag.st-active { background:var(--pt-blue-bg); border-color:var(--pt-blue); color:var(--pt-blue); }
   .tag.st-pending { background:var(--pt-blue-bg); border-color:var(--pt-blue-bd); color:var(--pt-blue); }
-  .tag.st-unpaid { background:#2F8A55; border-color:#2F8A55; color:#fff; }
+  .tag.st-unpaid { background:#E9F5EE; border-color:#2F8A55; color:#2F8A55; }
   .tag.st-expiring { background:#E9F5EE; border-color:#9FCDB2; color:#2F8A55; }
-  .tag.st-expired { background:#B8B8B8; border-color:#B8B8B8; color:#fff; }
-  .tag.st-none { background:#f4f4f4; border-color:#c9c9c9; color:#696969; }
+  .tag.st-expired { background:#f0f0f0; border-color:#9c9c9c; color:#696969; }
+  .tag.st-none { background:#f4f4f4; border-color:#d5d5d5; color:#696969; }
   .chip.st-active, .chip.st-pending, .chip.st-unpaid, .chip.st-expiring, .chip.st-expired, .chip.st-none { border-width:1px; }
   .chip.fsel { box-shadow:0 0 0 2px #373737; font-weight:700; }
   .badge { background:#EB5127; color:#fff; }
