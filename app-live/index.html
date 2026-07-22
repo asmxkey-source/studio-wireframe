@@ -63,6 +63,13 @@
   .tag { background:var(--pt-blue-bg); border-color:var(--pt-blue-bd); color:var(--pt-blue); }
   .tag.dark { background:var(--pt-blue); border-color:var(--pt-blue); color:#fff; }
   .tag.warn { background:#EB5127; border-color:#EB5127; color:#fff; }
+  /* 회원 상태 3색 체계: 파랑=정상 / 초록=돈 관련 조치 / 회색=비활성 (채움=강, 테두리=약) */
+  .tag.st-active { background:var(--pt-blue); border-color:var(--pt-blue); color:#fff; }
+  .tag.st-pending { background:var(--pt-blue-bg); border-color:var(--pt-blue-bd); color:var(--pt-blue); }
+  .tag.st-unpaid { background:#2F8A55; border-color:#2F8A55; color:#fff; }
+  .tag.st-expiring { background:#E9F5EE; border-color:#9FCDB2; color:#2F8A55; }
+  .tag.st-expired { background:#B8B8B8; border-color:#B8B8B8; color:#fff; }
+  .tag.st-none { background:#f4f4f4; border-color:#c9c9c9; color:#696969; }
   .badge { background:#EB5127; color:#fff; }
   .section-title { color:#373737; }
   .note, .hint, .list-item .sub { color:#696969; }
@@ -186,6 +193,7 @@ function memberStatus(mid){
   if(ps.length) return '만료';
   return '미등록';
 }
+function stClass(st){ return {'수강 중':'st-active','시작 전':'st-pending','미납':'st-unpaid','만료 예정':'st-expiring','만료':'st-expired','미등록':'st-none'}[st]||''; }
 function usablePass(mid,cat){ return memberPasses(mid).filter(p=>p.status==='active'&&p.remaining>0&&(!p.expire||p.expire>=todayStr)&&(p.scope==='all'||p.scopeCat===cat)).sort((a,b)=>a.expire<b.expire?-1:1)[0]; }
 function pendingPass(mid,cat){ return memberPasses(mid).find(p=>p.status==='pending'&&(p.scope==='all'||p.scopeCat===cat)); }
 // 수업이 수강권에 연결된 경우: 그 수강권만 사용 가능 (미연결 수업은 종전대로 카테고리 기준)
@@ -260,13 +268,13 @@ function vPassAdd(){ return hdr('수강권 추가','#/passes')+`<div class="cont
   <div class="field"><label>금액(원) <span class="req">*</span></label><input class="input money" name="price" type="text" inputmode="numeric" placeholder="440,000" required><div class="hint">회원 1인이 결제하는 금액 (예: 10회에 440,000원)</div></div>
   <button class="btn" type="submit">수강권 등록</button></form></div>`+tabbar('passes'); }
 function vMembers(){ return hdr('회원 관리')+`<div class="content">${DB.members.length?(()=>{
-  const order=[['수강 중','var(--pt-blue)'],['시작 전','#7f97cf'],['미등록','#c6d1e8'],['만료','#B8B8B8'],['만료 예정','#f2b5a4'],['미납','#EB5127']];
+  const order=[['수강 중','var(--pt-blue)'],['시작 전','#9db4dd'],['미납','#2F8A55'],['만료 예정','#9FCDB2'],['만료','#B8B8B8'],['미등록','#dddddd']];
   const cnt={}; DB.members.forEach(m=>{const s=memberStatus(m.id); cnt[s]=(cnt[s]||0)+1;});
   const total=DB.members.length;
   const segs=order.filter(([k])=>cnt[k]).map(([k,c])=>`<div style="width:${(cnt[k]/total*100).toFixed(1)}%;background:${c}"></div>`).join('');
   const legend=order.filter(([k])=>cnt[k]).map(([k])=>`${k} <b>${cnt[k]}</b>`).join(' · ');
   return `<div class="card"><b>회원 요약</b><div class="note" style="margin:6px 0 4px">전체 <b>${total}명</b> — ${legend}</div><div style="display:flex;height:14px;border:1px solid var(--pt-blue-bd);border-radius:7px;overflow:hidden;background:var(--pt-blue-bg)">${segs}</div></div>`;
-})():''}<div style="margin-bottom:8px"><span class="hint">수업 예약은 [시간표·예약] 탭의 '회원 수업 예약'에서</span></div>${DB.members.length?DB.members.map((m,i)=>{const st=memberStatus(m.id);const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<div class="list-item"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer"><span class="num">${i+1}</span>${esc(m.name)} <span class="tag ${['미납','만료 예정'].includes(st)?'warn':''}">${st}</span><br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}<br>${m.phone}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">등록된 회원이 없습니다</div>'}<a class="btn" href="#/memberAdd" style="margin-top:12px">＋ 회원 등록 · 초대</a></div>`+tabbar('members'); }
+})():''}<div style="margin-bottom:8px"><span class="hint">수업 예약은 [시간표·예약] 탭의 '회원 수업 예약'에서</span></div>${DB.members.length?DB.members.map((m,i)=>{const st=memberStatus(m.id);const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<div class="list-item"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer"><span class="num">${i+1}</span>${esc(m.name)} <span class="tag ${stClass(st)}">${st}</span><br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}<br>${m.phone}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">등록된 회원이 없습니다</div>'}<a class="btn" href="#/memberAdd" style="margin-top:12px">＋ 회원 등록 · 초대</a></div>`+tabbar('members'); }
 function vBookSelect(){ return hdr('회원 수업 예약','#/timetable')+`<div class="content"><div class="note" style="margin-bottom:8px">예약할 회원을 선택하세요.</div><div style="margin-bottom:8px;display:flex;align-items:center;gap:8px"><span class="tag dark">전체 ${DB.members.length}</span> ${DB.members.length?`<label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;cursor:pointer"><input type="checkbox" id="mchkAll" style="width:16px;height:16px;accent-color:var(--pt-blue)">전체 선택</label>`:''}</div>${DB.members.length?DB.members.map((m,i)=>{const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<label class="list-item" style="cursor:pointer"><input type="checkbox" class="mchk" data-mid="${m.id}" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--pt-blue)"><span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}</span></span></label>`;}).join(''):'<div class="empty">등록된 회원이 없습니다.<br><a class="btn" href="#/memberAdd" style="margin-top:10px">＋ 회원 등록</a></div>'}<a class="btn" id="bulkBook" style="display:none;margin-top:12px">다음 (선택한 0명이 예약할 수업 선택)</a></div>`+tabbar('timetable'); }
 function vBookFor(){
   if(!BULK.length) return vBookSelect();
@@ -299,7 +307,7 @@ function vMemberAdd(){ return hdr('회원 등록 · 초대','#/members')+`<div c
 function vMemberDetail(id){ const m=DB.members.find(x=>x.id===id); if(!m) return vMembers(); const ps=memberPasses(id); const atts=DB.attendance.filter(a=>a.memberId===id); const pays=DB.payments.filter(p=>p.memberId===id);
   const invite=location.origin+location.pathname+'?s='+CODE+'&join='+id;
   return hdr('회원 상세','#/members')+`<div class="content">
-  <div class="card"><h3 style="font-size:16px">${esc(m.name)} <span class="tag">${memberStatus(id)}</span></h3><div class="note" style="margin:0">${m.phone}</div></div>
+  <div class="card"><h3 style="font-size:16px">${esc(m.name)} <span class="tag ${stClass(memberStatus(id))}">${memberStatus(id)}</span></h3><div class="note" style="margin:0">${m.phone}</div></div>
   <a class="btn" href="#/payment/${id}">💳 결제 사항 등록</a>
   <div class="section-title">보유 수강권</div>${ps.length?ps.map(p=>`<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'시작 전':p.status==='active'?'사용 중':p.status==='refunded'?'환불됨':'만료'}</span><span style="float:right;font-size:11px">${(p.status==='active'||p.status==='pending')?`<a href="#/refund/${p.id}" style="color:#888;text-decoration:underline">환불</a> · `:''}<a data-delpass="${p.id}" style="color:#888;text-decoration:underline">삭제</a></span><div class="note" style="margin:0">${p.status==='pending'?'개시 전':p.status==='refunded'?'환불 처리됨 · 사용 '+(p.total-p.remaining)+'회/총 '+p.total+'회':'잔여 '+p.remaining+'/'+p.total+'회 · ~'+md(p.expire)}</div></div>`).join(''):'<div class="empty">없음</div>'}
   <div class="section-title">출석 이력</div>${atts.length?atts.slice().reverse().map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${esc(c.name||'수업')}(${dateLabel(c.date||a.date)}${c.time?', '+c.time:''})<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험':a.deducted?' · 1회 차감':''}</span></span><a data-delatt="${a.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`;}).join(''):'<div class="empty">없음</div>'}
