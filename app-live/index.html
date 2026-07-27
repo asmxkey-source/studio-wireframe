@@ -447,8 +447,8 @@ ${hasBooked?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석
 <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
 <div class="section-title">📝 수업 메모</div>
 <form id="fnote" data-cid="${id}">
-  <div class="field"><label>주제</label><input class="input" name="topic" value="${esc(c.topic||'')}" placeholder="예: 목어깨 편하게 몸을 뒤집어 후면코어 쓰기"></div>
-  <div class="field"><label>시퀀스</label><textarea class="input" name="seq" rows="6" placeholder="1. 블럭에 앉아 좌골인지 목 어깨 풀고 호흡&#10;2. 3m 수파인 - 6m 수파인&#10;3. ...">${esc(c.seq||'')}</textarea></div>
+  <div class="field"><label>주제</label><input class="input" name="topic" value="${esc(c.topic||'')}"></div>
+  <div class="field"><label>시퀀스</label><textarea class="input" name="seq" rows="6">${esc(c.seq||'')}</textarea></div>
   <button class="btn ghost" type="submit">메모 저장</button>
 </form>
 <a class="btn ghost" href="#/classEdit/${id}" style="margin-top:12px">수업 정보 수정</a>
