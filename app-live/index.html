@@ -451,7 +451,7 @@ ${hasBooked?`<a class="btn" href="#/attend/${id}" style="margin-top:12px">출석
   <div class="field"><label>시퀀스</label><textarea class="input" name="seq" rows="6">${esc(c.seq||'')}</textarea></div>
   <button class="btn ghost" type="submit">메모 저장</button>
 </form>
-<a class="btn ghost" href="#/classNotes/${id}" style="margin-top:8px">📝 이 수업의 지난 메모 모아보기</a>
+<a class="btn ghost" href="#/classNotes/${id}" style="margin-top:8px">이 수업 메모 모아보기</a>
 <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
 <div class="section-title">폐강 처리</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">삭제</a>`}</div>`+tabbar('timetable'); }
 function vClassNotes(cid){ const c=DB.classes.find(x=>x.id===cid); if(!c) return vTimetable();
