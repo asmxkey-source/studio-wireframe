@@ -417,7 +417,7 @@ function vClassAdd(){
   return hdr('수업 등록','#/timetable')+`<div class="content"><form id="fclass">
   <div class="field"><label>강의 선택 <span class="req">*</span></label>
     <span style="position:relative;display:block"><select class="input" id="clsPass" name="passId" style="width:100%;appearance:none;-webkit-appearance:none;padding-right:28px">${opts}</select><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:#696969">▼</span></span>
-    <div class="hint">수업은 항상 수강권에 연결됩니다</div>
+    <div class="hint">이 수업으로 예약·차감될 수강권</div>
   </div>
   <div class="field"><label>수업명 <span class="req">*</span></label><input class="input" name="cname" value="${esc(DB.passes[0].name)}" required><div class="hint">한 수강권으로 교차수강 등록 시, '강의 선택'은 동일하게, '수업명'만 바꿔 등록하세요</div></div>
   <div class="row"><div class="field"><label>날짜 <span class="req">*</span></label><input class="input" name="date" type="date" value="${TT.sel||todayStr}" required></div><div class="field"><label>시간 <span class="req">*</span></label><input class="input" name="time" placeholder="10:00" required></div></div>
