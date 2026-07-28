@@ -387,7 +387,7 @@ function vClassEdit(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vT
   <div class="row"><div class="field"><label>시간</label><input class="input" name="time" value="${c.time}"></div><div class="field"><label>정원</label><input class="input" name="capacity" type="number" inputmode="numeric" min="1" value="${c.capacity}"></div></div>
   <div class="field"><label>장소</label><input class="input" name="place" value="${esc(c.place||'')}"></div>
   ${series?`<div class="field"><label>적용 범위 (반복 수업)</label><div class="seg" id="escope" data-v="after"><a data-v="one">이 회차만</a><a class="on" data-v="after">이후 회차부터</a><a data-v="all">전체</a></div></div>`:''}
-  <div class="hint">요일·날짜 변경은 폐강 후 다시 등록해주세요.</div>
+  <div class="hint" style="margin:0 0 14px">요일·날짜 변경은 폐강 후 다시 등록해주세요.</div>
   <button class="btn" type="submit">저장</button></form></div>`+tabbar('timetable');
 }
 function classListSection(){
