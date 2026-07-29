@@ -151,6 +151,7 @@ const todayStr=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+
 // 시간표 뷰 상태
 let TT={ view: localStorage.getItem('ttView')||'week', ref:todayStr, sel:todayStr };
 let MEMF={ st:'', q:'' }; // 회원 관리 필터 (상태 칩 / 이름 검색)
+let TUF={ range:'month' }; // 수강료 기간 (이번 달 | 전체)
 // 일괄 예약 선택 회원
 let BULK=[];
 
@@ -504,16 +505,19 @@ function vRefund(mpId){ const p=DB.mpasses.find(x=>x.id===mpId); if(!p||p.status
     <button class="btn" type="submit">환불 확정</button>
   </form></div>`+tabbar('members'); }
 function vTuition(){
-  const unpaid=DB.payments.filter(p=>p.status==='unpaid');
-  const paid=DB.payments.filter(p=>p.status==='paid').slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1);
-  const refunds=DB.payments.filter(p=>p.status==='refund').slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1);
+  const ym=todayStr.slice(0,7);
+  const inRange=p=>TUF.range==='all'||String(p.date||'').startsWith(ym);
+  const unpaid=DB.payments.filter(p=>p.status==='unpaid'); // 미납은 못 받은 돈이므로 기간과 무관하게 전체 표시
+  const paid=DB.payments.filter(p=>p.status==='paid'&&inRange(p)).slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1);
+  const refunds=DB.payments.filter(p=>p.status==='refund'&&inRange(p)).slice().sort((a,b)=>(b.date||'')<(a.date||'')?-1:1);
   const refSum=refunds.reduce((s,p)=>s+(+p.amount||0),0);
   const paidSum=paid.reduce((s,p)=>s+(+p.amount||0),0);
   const unpaidSum=unpaid.reduce((s,p)=>s+(+p.amount||0),0);
   const tot=paidSum+unpaidSum; const pct=tot?Math.round(paidSum/tot*100):0;
   const expM=DB.members.filter(m=>memberStatus(m.id)==='만료 예정');
   return hdr('수강료')+`<div class="content">
-  <div class="card"><b>납부 현황 (납부 비율 ${pct}%)</b>
+  <div class="seg" id="tuRange" data-v="${TUF.range}"><a class="${TUF.range==='month'?'on':''}" data-v="month">이번 달</a><a class="${TUF.range==='all'?'on':''}" data-v="all">전체</a></div>
+  <div class="card"><b>납부 현황${TUF.range==='month'?' · '+(+ym.slice(5,7))+'월':''} (납부 비율 ${pct}%)</b>
     <div class="note" style="margin:6px 0 4px">납부 <b>${won(paidSum)}원</b> (${paid.length}건) · 미납 <b>${won(unpaidSum)}원</b> (${unpaid.length}건)${refunds.length?` · 환불 <b>−${won(refSum)}원</b> (${refunds.length}건)`:''}</div>
     <div class="prog"><div style="width:${pct}%"></div></div>
   </div>
@@ -614,6 +618,7 @@ function wire(){
   const ttPrev=document.getElementById('ttPrev'); if(ttPrev) ttPrev.onclick=()=>{ TT.ref=TT.view==='week'?addDays(TT.ref,-7):addMonths(TT.ref,-1); render(); };
   const ttNext=document.getElementById('ttNext'); if(ttNext) ttNext.onclick=()=>{ TT.ref=TT.view==='week'?addDays(TT.ref,7):addMonths(TT.ref,1); render(); };
   const ttToday=document.getElementById('ttToday'); if(ttToday) ttToday.onclick=()=>{ TT.ref=todayStr; TT.sel=todayStr; render(); };
+  const tuSeg=document.getElementById('tuRange'); if(tuSeg) tuSeg.querySelectorAll('a').forEach(a=>a.onclick=e=>{ e.preventDefault(); TUF.range=a.dataset.v; render(); });
   document.querySelectorAll('[data-day]').forEach(td=>td.onclick=()=>{ if(td.dataset.day){ TT.sel=td.dataset.day; render(); } });
   const fblock=document.getElementById('fblock'); if(fblock) fblock.onsubmit=e=>{e.preventDefault();doBlockAdd(fblock);};
   document.querySelectorAll('[data-unblock]').forEach(b=>b.onclick=()=>doUnblock(b.dataset.unblock));
