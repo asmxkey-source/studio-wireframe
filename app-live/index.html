@@ -520,6 +520,7 @@ function vTuition(){
   <div class="seg" id="tuRange" data-v="${TUF.range}"><a class="${TUF.range==='month'?'on':''}" data-v="month">이번 달</a><a class="${TUF.range==='all'?'on':''}" data-v="all">전체</a></div>
   ${TUF.range==='month'?`<span style="position:relative;display:block;margin-bottom:10px"><input class="input" id="tuMonth" type="month" value="${ym}" style="width:100%;appearance:none;-webkit-appearance:none;padding-right:28px"><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:#696969">▼</span></span>`:''}
   <div class="card"><b>${TUF.range==='month'?((ym.slice(0,4)!==todayStr.slice(0,4)?(+ym.slice(0,4))+'년 ':'')+(+ym.slice(5,7))+'월'):'납부 현황'} (납부 비율 ${pct}%)</b>
+    ${TUF.range==='all'?(()=>{const ds=DB.payments.map(p=>p.date).filter(Boolean).sort();return `<div class="hint" style="margin:2px 0 0">집계 기간: ${ds.length?ds[0].replace(/-/g,'.')+' ~ 오늘':'기록 없음'}</div>`;})():''}
     <div class="note" style="margin:6px 0 4px">납부 <b>${won(paidSum)}원</b> (${paid.length}건) · 미납 <b>${won(unpaidSum)}원</b> (${unpaid.length}건)${refunds.length?` · 환불 <b>−${won(refSum)}원</b> (${refunds.length}건)`:''}</div>
     <div class="prog"><div style="width:${pct}%"></div></div>
   </div>
