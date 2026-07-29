@@ -202,7 +202,11 @@ function pendingPass(mid,cat){ return memberPasses(mid).find(p=>p.status==='pend
 // 수업이 수강권에 연결된 경우: 그 수강권만 사용 가능 (미연결 수업은 종전대로 카테고리 기준)
 function classPass(mid,c){ if(!c.passId) return usablePass(mid,c.category); return memberPasses(mid).filter(p=>p.passId===c.passId&&p.status==='active'&&p.remaining>0&&(!p.expire||p.expire>=todayStr)).sort((a,b)=>a.expire<b.expire?-1:1)[0]; }
 function classPendingPass(mid,c){ if(!c.passId) return pendingPass(mid,c.category); return memberPasses(mid).find(p=>p.passId===c.passId&&p.status==='pending'); }
-function canUseClass(mid,c){ if(!c.passId) return true; return !!classPass(mid,c)||!!classPendingPass(mid,c)||DB.payments.some(p=>p.memberId===mid&&p.status==='unpaid'&&p.passId===c.passId); }
+function canUseClass(mid,c){ if(!c.passId) return true;
+  // 수강권·미납 기록이 아예 없는 회원(체험·결제 전)은 어느 수업이든 예약 가능 (출석은 체험/소급 처리)
+  const hasAny=DB.mpasses.some(p=>p.memberId===mid&&p.status!=='refunded')||DB.payments.some(p=>p.memberId===mid&&p.status==='unpaid');
+  if(!hasAny) return true;
+  return !!classPass(mid,c)||!!classPendingPass(mid,c)||DB.payments.some(p=>p.memberId===mid&&p.status==='unpaid'&&p.passId===c.passId); }
 
 // ===== 라우팅 =====
 function go(h){ location.hash=h; }
