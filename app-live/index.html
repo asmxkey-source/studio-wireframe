@@ -513,7 +513,7 @@ function vTuition(){
   const tot=paidSum+unpaidSum; const pct=tot?Math.round(paidSum/tot*100):0;
   const expM=DB.members.filter(m=>memberStatus(m.id)==='만료 예정');
   return hdr('수강료')+`<div class="content">
-  <div class="card"><b>수강료 납부 현황 (납부 비율 ${pct}%)</b>
+  <div class="card"><b>납부 현황 (납부 비율 ${pct}%)</b>
     <div class="note" style="margin:6px 0 4px">납부 <b>${won(paidSum)}원</b> (${paid.length}건) · 미납 <b>${won(unpaidSum)}원</b> (${unpaid.length}건)${refunds.length?` · 환불 <b>−${won(refSum)}원</b> (${refunds.length}건)`:''}</div>
     <div class="prog"><div style="width:${pct}%"></div></div>
   </div>
