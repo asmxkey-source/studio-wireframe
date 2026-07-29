@@ -281,7 +281,7 @@ function memListHtml(){
   let list=DB.members.map(m=>({m,st:memberStatus(m.id)}));
   if(MEMF.st) list=list.filter(x=>x.st===MEMF.st);
   const q=MEMF.q.trim(); if(q) list=list.filter(x=>x.m.name.includes(q));
-  return list.length?list.map((x,i)=>{const m=x.m,st=x.st;const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<div class="list-item"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer"><span class="num">${i+1}</span>${esc(m.name)} <span class="tag ${stClass(st)}">${st}</span><br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}${m.phone?'<br>'+esc(m.phone):''}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">조건에 맞는 회원이 없습니다</div>';
+  return list.length?list.map((x,i)=>{const m=x.m,st=x.st;const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<div class="list-item"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer"><span class="num">${i+1}</span>${esc(m.name)} (${m.mtype==='trial'?'체험':'일반'}) <span class="tag ${stClass(st)}">${st}</span><br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}${m.phone?'<br>'+esc(m.phone):''}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">조건에 맞는 회원이 없습니다</div>';
 }
 function vMembers(){ return hdr('회원 관리')+`<div class="content">${DB.members.length?(()=>{
   const order=[['수강 중','var(--pt-blue)'],['시작 전','#9db4dd'],['미납','#2F8A55'],['만료 예정','#9FCDB2'],['만료','#B8B8B8'],['미등록','#dddddd']];
@@ -317,10 +317,12 @@ function vBookFor(){
 }
 function vMemberEdit(id){ const m=DB.members.find(x=>x.id===id); if(!m) return vMembers();
   return hdr('회원 정보 수정','#/member/'+id)+`<div class="content"><form id="fmemedit" data-mid="${id}">
+  <div class="field"><label>회원 구분</label><div class="seg" id="mtype" data-v="${m.mtype==='trial'?'trial':'normal'}"><a class="${m.mtype==='trial'?'':'on'}" data-v="normal">일반</a><a class="${m.mtype==='trial'?'on':''}" data-v="trial">체험</a></div><div class="hint">체험 회원이 정식 등록하면 '일반'으로 바꿔주세요</div></div>
   <div class="field"><label>이름 <span class="req">*</span></label><input class="input" name="name" value="${esc(m.name)}" required></div>
   <div class="field"><label>휴대폰 번호</label><input class="input" name="phone" inputmode="tel" value="${esc(m.phone||'')}" placeholder="010-1234-5678"></div>
   <button class="btn" type="submit">저장</button></form></div>`+tabbar('members'); }
 function vMemberAdd(){ return hdr('회원 등록 · 초대','#/members')+`<div class="content"><div class="note">이름·휴대폰 입력 후 등록하면 초대 링크가 만들어집니다. 그 링크를 카톡으로 회원에게 보내세요.</div><form id="f">
+  <div class="field"><label>회원 구분</label><div class="seg" id="mtype" data-v="normal"><a class="on" data-v="normal">일반</a><a data-v="trial">체험</a></div></div>
   <div class="field"><label>이름 <span class="req">*</span></label><input class="input" name="name" required></div>
   <div class="field"><label>휴대폰 번호</label><input class="input" name="phone" inputmode="tel" placeholder="010-1234-5678"><div class="hint">번호를 모르면 비워두고, 나중에 회원 상세에서 입력하세요</div></div>
   <button class="btn" type="submit">등록하고 초대 링크 만들기</button></form>
@@ -335,7 +337,7 @@ function vMemberAdd(){ return hdr('회원 등록 · 초대','#/members')+`<div c
 function vMemberDetail(id){ const m=DB.members.find(x=>x.id===id); if(!m) return vMembers(); const ps=memberPasses(id); const atts=DB.attendance.filter(a=>a.memberId===id); const pays=DB.payments.filter(p=>p.memberId===id);
   const invite=location.origin+location.pathname+'?s='+CODE+'&join='+id;
   return hdr('회원 상세','#/members')+`<div class="content">
-  <div class="card"><a href="#/memberEdit/${id}" style="float:right;font-size:11px;color:#888;text-decoration:underline">수정</a><h3 style="font-size:16px">${esc(m.name)} <span class="tag ${stClass(memberStatus(id))}">${memberStatus(id)}</span></h3><div class="note" style="margin:0">${m.phone?esc(m.phone):'<span style="color:#B8B8B8">전화번호 미입력</span>'}</div></div>
+  <div class="card"><a href="#/memberEdit/${id}" style="float:right;font-size:11px;color:#888;text-decoration:underline">수정</a><h3 style="font-size:16px">${esc(m.name)} (${m.mtype==='trial'?'체험':'일반'}) <span class="tag ${stClass(memberStatus(id))}">${memberStatus(id)}</span></h3><div class="note" style="margin:0">${m.phone?esc(m.phone):'<span style="color:#B8B8B8">전화번호 미입력</span>'}</div></div>
   <a class="btn" href="#/payment/${id}">💳 결제 사항 등록</a>
   <div class="section-title">보유 수강권</div>${ps.length?ps.map(p=>`<div class="card"><b>${esc(p.name)}</b> <span class="tag">${p.status==='pending'?'시작 전':p.status==='active'?'사용 중':p.status==='refunded'?'환불됨':'만료'}</span><span style="float:right;font-size:11px">${(p.status==='active'||p.status==='pending')?`<a href="#/refund/${p.id}" style="color:#888;text-decoration:underline">환불</a> · `:''}<a data-delpass="${p.id}" style="color:#888;text-decoration:underline">삭제</a></span><div class="note" style="margin:0">${p.status==='pending'?'개시 전':p.status==='refunded'?'환불 처리됨 · 사용 '+(p.total-p.remaining)+'회/총 '+p.total+'회':'잔여 '+p.remaining+'/'+p.total+'회 · ~'+md(p.expire)}</div></div>`).join(''):'<div class="empty">없음</div>'}
   <div class="section-title">출석 이력</div>${atts.length?atts.slice().reverse().map(a=>{const c=DB.classes.find(x=>x.id===a.classId)||{};return `<div class="list-item"><span class="grow">${esc(c.name||'수업')}(${dateLabel(c.date||a.date)}${c.time?', '+c.time:''})<br><span class="sub">${a.result==='present'?'출석':a.result==='noshow'?'노쇼':'결석'}${a.trial?' · 체험':a.deducted?' · 1회 차감':''}</span></span><a data-delatt="${a.id}" style="font-size:11px;color:#888;text-decoration:underline">삭제</a></div>`;}).join(''):'<div class="empty">없음</div>'}
@@ -760,7 +762,7 @@ async function doDelProduct(id){ const p=DB.passes.find(x=>x.id===id); if(!p) re
 function copy(t){ navigator.clipboard?.writeText(t).then(()=>toast('복사됨 — 카톡에 붙여넣어 전송하세요'),()=>toast(t)); }
 async function handleForm(hash,d){
   if(hash.startsWith('#/passAdd')){ const cat=document.getElementById('cat').dataset.v; const univ=document.getElementById('puse').dataset.v==='univ'; const price=+String(d.price).replace(/[^0-9]/g,''); DB.passes.push({id:uid(),category:cat,scope:'all',scopeCat:cat==='group'?'그룹':'개인',univ,name:d.name,count:+d.count,months:+d.months,price}); await saveDB(); toast('수강권 등록'); go('#/passes'); }
-  else if(hash.startsWith('#/memberAdd')){ const id=uid(); DB.members.push({id,name:d.name,phone:(d.phone||'').trim(),joined:false}); await saveDB(); toast('회원 등록 · 초대 링크 생성'); go('#/member/'+id); }
+  else if(hash.startsWith('#/memberAdd')){ const id=uid(); const mtype=document.getElementById('mtype')?document.getElementById('mtype').dataset.v:'normal'; DB.members.push({id,name:d.name,phone:(d.phone||'').trim(),mtype,joined:false}); await saveDB(); toast('회원 등록 · 초대 링크 생성'); go('#/member/'+id); }
 }
 async function doClassAdd(f){
   const d=Object.fromEntries(new FormData(f)); const passId=document.getElementById('clsPass').value;
@@ -846,6 +848,7 @@ async function doMemberEdit(f){ const m=DB.members.find(x=>x.id===f.dataset.mid)
   const d=Object.fromEntries(new FormData(f));
   const name=(d.name||'').trim(); if(!name){ toast('이름을 입력하세요'); return; }
   m.name=name; m.phone=(d.phone||'').trim();
+  const mt=document.getElementById('mtype'); if(mt) m.mtype=mt.dataset.v;
   await saveDB(); toast('회원 정보 수정 완료'); go('#/member/'+m.id); }
 async function doClassNote(f){ const c=DB.classes.find(x=>x.id===f.dataset.cid); if(!c) return;
   const d=Object.fromEntries(new FormData(f));
