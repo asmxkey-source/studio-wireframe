@@ -281,7 +281,7 @@ function vPassAdd(){ return hdr('수강권 추가','#/passes')+`<div class="cont
   <div class="field"><label>사용 범위</label><div class="seg" id="puse" data-v="linked"><a class="on" data-v="linked">이 수강권의 수업만</a><a data-v="univ">전체 수업</a></div><div class="hint">체험 1회권처럼 <b>어느 수업에나</b> 쓰는 상품이면 '전체 수업' 선택 — 모든 수업에 예약·차감됩니다</div></div>
   <button class="btn" type="submit">수강권 등록</button></form></div>`+tabbar('passes'); }
 function memListHtml(){
-  let list=DB.members.map(m=>({m,st:memberStatus(m.id)}));
+  let list=DB.members.slice().reverse().map(m=>({m,st:memberStatus(m.id)})); // 최근 등록 회원이 위로
   if(MEMF.st) list=list.filter(x=>x.st===MEMF.st);
   const q=MEMF.q.trim(); if(q) list=list.filter(x=>x.m.name.includes(q));
   return list.length?list.map((x,i)=>{const m=x.m,st=x.st;const ap=memberPasses(m.id).find(p=>p.status==='active');const pp=ap?null:memberPasses(m.id).find(p=>p.status==='pending');const upay=(!ap&&!pp)?DB.payments.find(p=>p.memberId===m.id&&p.status==='unpaid'):null;return `<div class="list-item"><span class="grow" data-go="#/member/${m.id}" style="cursor:pointer"><span class="num">${i+1}</span>${esc(m.name)}(${m.mtype==='trial'?'체험':'일반'}) <span class="tag ${stClass(st)}">${st}</span><br><span class="sub">${ap?'잔여 '+ap.remaining+'회/총 '+ap.total+'회':pp?esc(pp.name)+' · 총 '+pp.total+'회 (첫 출석 전)':upay?esc(upay.passName)+' · 미납':'수강권 없음'}${m.phone?'<br>'+esc(m.phone):''}</span></span><span class="arrow" data-go="#/member/${m.id}" style="cursor:pointer">›</span></div>`;}).join(''):'<div class="empty">조건에 맞는 회원이 없습니다</div>';
