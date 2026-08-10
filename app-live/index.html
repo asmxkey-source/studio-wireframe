@@ -470,7 +470,7 @@ const rcls=att?((!att.trial&&att.result!=='present')?'st-none':''):(done?'':'st-
 const xk=id+':'+r.memberId;
 return `<div class="list-item"${ATTX===xk?' style="border-bottom:none"':''}>${done?'<span style="width:20px;flex-shrink:0;text-align:center">✓</span>':`<input type="checkbox" class="rchk" data-mid="${r.memberId}" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--pt-blue)">`}<span class="grow"><span class="num">${i+1}</span>${esc(m.name)}<br><span class="sub">${up?esc(up.name)+' · 잔여 '+up.remaining+'회':pp?esc(pp.name)+' · 시작 전 (첫 출석 시 시작)':upay?esc(upay.passName)+' · 미납':'수강권 없음 · 결제 전'}</span></span><a class="tag ${rcls}" data-att="${xk}" style="cursor:pointer;flex-shrink:0">${rtag} ${ATTX===xk?'▴':'▾'}</a></div>${ATTX===xk?`<div style="display:flex;gap:4px;flex-wrap:wrap;padding:2px 0 12px 30px;border-bottom:1px solid #e7ebf3">${[['present','출석'],['absent','결석'],['noshow','노쇼'],['trial','무료 체험']].map(([k,l])=>`<a class="chip ${key===k?'on':''}" data-attset="${k}" data-cid="${id}" data-mid="${r.memberId}">${l}</a>`).join('')}${att?`<a class="chip" data-attset="undo" data-cid="${id}" data-mid="${r.memberId}" style="border-style:dashed;color:#696969">미처리로 되돌리기</a>`:''}</div>`:''}`;}).join(''):'<div class="empty">예약자가 없습니다</div>'}
 ${hasBooked?`<div id="cancelBox" style="display:none;margin-top:8px">${c.seriesId?`<div class="seg" id="cancelScope" data-v="one" style="margin-bottom:6px"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 모두</a></div>`:''}<a class="btn ghost" id="bulkCancel" data-cid="${id}">선택 0건 예약 취소</a></div>`:''}
-${(()=>{const un=rs.filter(r=>!DB.attendance.find(a=>a.classId===id&&a.memberId===r.memberId)).length; const done=DB.attendance.filter(a=>a.classId===id).length; let h=''; if(un) h+=`<a class="btn" id="attAll" data-cid="${id}" style="margin-top:12px">전원 출석 저장 (미처리 ${un}명)</a>`; if(done) h+=`<a class="btn ghost" id="attUndoAll" data-cid="${id}" style="margin-top:8px">출석 처리 전체 되돌리기 (${done}건)</a>`; return h;})()}
+${(()=>{const un=rs.filter(r=>!DB.attendance.find(a=>a.classId===id&&a.memberId===r.memberId)).length; return un?`<a class="btn" id="attAll" data-cid="${id}" style="margin-top:12px">전원 출석 저장 (미처리 ${un}명)</a>`:'';})()}
 <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
 ${(()=>{ const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)&&canUseClass(m.id,c)); const full=rs.length>=c.capacity; if(full) return '<div class="hint">정원 마감 — 예약 추가 불가</div>'; if(!avail.length){ return (c.passId&&!rs.length)?'<div class="hint">이 수업의 수강권을 보유한 회원이 없습니다 — 결제 전 회원은 [시간표·예약]의 \'회원 수업 예약\'에서</div>':''; } return `<div class="field" style="margin-top:10px"><label>회원 수업 예약</label>${c.seriesId?`<div class="seg" id="bookScope" data-v="one" style="margin-bottom:6px"><a class="on" data-v="one">이 회차만</a><a data-v="after">이후 회차 반복<br>(고정 수강)</a></div><div class="hint" style="margin:0 0 6px">교차 수강 등 요일을 골라 다니면 → '이 회차만'. 매주 이 요일에 고정으로 다니면 → '이후 회차 반복'</div>`:''}<div class="row"><span style="position:relative;flex:1"><select class="input" id="bookSel" style="width:100%;appearance:none;-webkit-appearance:none;padding-right:28px">${avail.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}</select><span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:#696969">▼</span></span><a class="btn ghost" id="trainerBook" data-cid="${id}" style="flex:0 0 80px;margin:0">추가</a></div>${c.passId?'<div class="hint" style="margin-top:4px">이 수업의 수강권을 보유한 회원만 표시됩니다</div>':''}</div>`; })()}
 <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
@@ -646,7 +646,6 @@ function wire(){
   document.querySelectorAll('[data-att]').forEach(el=>el.onclick=()=>{ ATTX=(ATTX===el.dataset.att)?null:el.dataset.att; render(); });
   document.querySelectorAll('[data-attset]').forEach(el=>el.onclick=()=>doAttOne(el.dataset.cid,el.dataset.mid,el.dataset.attset));
   const attAll=document.getElementById('attAll'); if(attAll) attAll.onclick=()=>doAttAll(attAll.dataset.cid);
-  const attUndoAll=document.getElementById('attUndoAll'); if(attUndoAll) attUndoAll.onclick=()=>doAttUndoAll(attUndoAll.dataset.cid);
   const fmemedit=document.getElementById('fmemedit'); if(fmemedit) fmemedit.onsubmit=e=>{e.preventDefault();doMemberEdit(fmemedit);};
   const fatt=document.getElementById('fatt'); if(fatt) fatt.onsubmit=e=>{e.preventDefault();doAttend(fatt);};
   const fjoin=document.getElementById('fjoin'); if(fjoin) fjoin.onsubmit=e=>{e.preventDefault();doJoin(fjoin);};
@@ -935,14 +934,6 @@ async function doAttUndo(cid,mid){ const a=DB.attendance.find(x=>x.classId===cid
   const r=DB.reservations.find(x=>x.classId===cid&&x.memberId===mid&&x.status==='done'); if(r) r.status='booked';
   DB.attendance=DB.attendance.filter(x=>x!==a);
   ATTX=null; await saveDB(); toast('미처리로 되돌림 · 차감 복구'); render(); }
-async function doAttUndoAll(cid){
-  const list=DB.attendance.filter(a=>a.classId===cid);
-  if(!list.length){ toast('되돌릴 출석 처리가 없습니다',1); return; }
-  if(!confirm(`이 수업의 출석 처리 ${list.length}건을 전부 되돌릴까요?\n차감된 횟수가 복구되고 전원 '미처리' 상태가 됩니다.`)) return;
-  list.forEach(a=>{ if(a.deducted){ const mp=(a.mpId&&DB.mpasses.find(p=>p.id===a.mpId))||DB.mpasses.find(p=>p.memberId===a.memberId&&p.status==='active'); if(mp&&mp.status!=='refunded'&&mp.remaining<mp.total) mp.remaining++; }
-    const r=DB.reservations.find(x=>x.classId===cid&&x.memberId===a.memberId&&x.status==='done'); if(r) r.status='booked'; });
-  DB.attendance=DB.attendance.filter(a=>a.classId!==cid);
-  ATTX=null; await saveDB(); toast(list.length+'건 되돌림 · 차감 복구'); render(); }
 async function doAttAll(cid){ const c=DB.classes.find(x=>x.id===cid); if(!c) return;
   const targets=occRes(cid).filter(r=>!DB.attendance.find(a=>a.classId===cid&&a.memberId===r.memberId));
   if(!targets.length){ toast('미처리 인원이 없습니다',1); return; }
