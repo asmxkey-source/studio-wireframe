@@ -484,7 +484,8 @@ ${(()=>{ const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)&&canUse
 <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
 <div class="section-title">폐강 처리</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">삭제</a>`}</div>`+tabbar('timetable'); }
 function vClassNotes(cid){ const c=DB.classes.find(x=>x.id===cid); if(!c) return vTimetable();
-  const list=(c.seriesId?DB.classes.filter(x=>x.seriesId===c.seriesId):[c]).filter(x=>x.topic||x.seq).sort((a,b)=>a.date<b.date?1:-1);
+  // "이 수업의 흐름" 기준: 반복/단건 구분 없이 수업 이름 + 연결 수강권이 같으면 한 커리큘럼으로 묶음
+  const list=DB.classes.filter(x=>x.name===c.name&&(x.passId||null)===(c.passId||null)).filter(x=>x.topic||x.seq).sort((a,b)=>a.date<b.date?1:-1);
   return hdr('수업 메모 모아보기','#/class/'+cid)+`<div class="content">
   <div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span> <b>${esc(c.name)}</b><div class="note" style="margin:4px 0 0">메모 누적: ${list.length}개, 항목을 탭하면 그 회차로 이동</div></div>
   ${list.length?list.map((x,i)=>`<a class="list-item" href="#/class/${x.id}" style="align-items:flex-start"><span class="grow"><span class="num">${i+1}</span><b>${dateLabel(x.date)} ${x.time||''}</b>${x.topic?`<br><span style="font-weight:700;color:var(--pt-blue)">${esc(x.topic)}</span>`:''}${x.seq?`<br><span class="sub" style="white-space:pre-line">${esc(x.seq)}</span>`:''}</span><span class="arrow">›</span></a>`).join(''):'<div class="empty">아직 작성된 메모가 없습니다.<br>수업 상세의 📝 수업 메모에서 주제·시퀀스를 기록해 보세요.</div>'}
@@ -952,6 +953,10 @@ async function doClose(cid,scope){ const c=DB.classes.find(x=>x.id===cid); if(!c
   if(c.seriesId&&scope==='all') targets=DB.classes.filter(x=>x.seriesId===c.seriesId);
   else if(c.seriesId&&scope==='after') targets=DB.classes.filter(x=>x.seriesId===c.seriesId&&x.date>=c.date);
   if(!confirm(`${targets.length}개 수업을 폐강할까요? 예약이 취소됩니다.`)) return;
+  if(c.seriesId&&scope==='all'){
+    const singles=DB.classes.filter(x=>!x.seriesId&&x.name===c.name&&(x.passId||null)===(c.passId||null));
+    if(singles.length&&confirm(`같은 이름의 단건 회차 ${singles.length}개도 함께 삭제할까요?\n[확인] 함께 삭제  [취소] 반복 등록분만 폐강`)) targets=targets.concat(singles);
+  }
   const hasAtt=t=>DB.attendance.some(a=>a.classId===t.id);
   const withAtt=targets.filter(hasAtt);
   let delAttToo=false;
