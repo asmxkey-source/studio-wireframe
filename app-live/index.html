@@ -562,7 +562,6 @@ function vJoinMember(){
   const isNew = jid==='new' || (jid && jid!=='new' && !DB.members.find(x=>x.id===jid));
   if(isNew){ return hdr('회원 가입')+`<div class="content"><div class="banner">스튜디오 <b>${CODE}</b>에 오신 것을 환영합니다. 아래 정보를 입력하면 가입됩니다.</div><form id="fjoin" data-mid="new">
     <div class="field"><label>이름 <span class="req">*</span></label><input class="input" name="name" required></div>
-    <div class="field"><label>생년월일 앞 6자리 <span class="req">*</span></label><input class="input" name="birth" inputmode="numeric" placeholder="950412" required></div>
     <div class="field"><label>휴대폰 <span class="req">*</span></label><input class="input" name="phone" inputmode="tel" placeholder="010-0000-0000" required></div>
     <div class="banner">🔔 수강권 만료·수업 변경·납부 안내는 앱 알림으로 전달됩니다.</div>
     <button class="btn" type="submit">가입 완료</button></form>
@@ -570,7 +569,6 @@ function vJoinMember(){
   const m=jid?DB.members.find(x=>x.id===jid):null;
   if(m&&!m.joined){ return hdr('회원 가입')+`<div class="content"><div class="banner">${esc(m.name)}님, 환영합니다. 아래 정보를 확인·입력하면 가입 완료됩니다.</div><form id="fjoin" data-mid="${m.id}">
     <div class="field"><label>이름</label><input class="input" name="name" value="${esc(m.name)}" required></div>
-    <div class="field"><label>생년월일 앞 6자리 <span class="req">*</span></label><input class="input" name="birth" inputmode="numeric" placeholder="950412" required></div>
     <div class="field"><label>휴대폰</label><input class="input" name="phone" value="${esc(m.phone)}" inputmode="tel" required></div>
     <div class="banner">🔔 수강권 만료·수업 변경·납부 안내는 앱 알림으로 전달됩니다.</div>
     <button class="btn" type="submit">가입 완료</button></form>
@@ -841,8 +839,8 @@ async function doClassEdit(f){
   await saveDB(); toast(`${targets.length}개 수업 수정 완료`); go('#/class/'+id);
 }
 async function doJoin(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f));
-  if(mid==='new'){ const id=uid(); DB.members.push({id,name:d.name,phone:d.phone,birth:d.birth,joined:true}); localStorage.setItem('myMemberId',id); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); return; }
-  const m=DB.members.find(x=>x.id===mid); if(m){ m.name=d.name; m.phone=d.phone; m.birth=d.birth; m.joined=true; localStorage.setItem('myMemberId',mid); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); } }
+  if(mid==='new'){ const id=uid(); DB.members.push({id,name:d.name,phone:d.phone,joined:true}); localStorage.setItem('myMemberId',id); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); return; }
+  const m=DB.members.find(x=>x.id===mid); if(m){ m.name=d.name; m.phone=d.phone; m.joined=true; localStorage.setItem('myMemberId',mid); await saveDB(); toast('가입 완료! 강사 폰에도 반영됩니다.'); go('#/m/reserve'); } }
 async function doPayment(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f)); const method=document.getElementById('method').dataset.v; const startMode=document.getElementById('start').dataset.v; const pass=DB.passes.find(p=>p.id===d.passId); if(!pass) return; const unpaid=method==='미납';
   // 체험 회원이 정규 수강권(전체 수업용 아님)을 등록하면 자동으로 '일반' 전환
   if(!pass.univ){ const mem=DB.members.find(x=>x.id===mid); if(mem&&mem.mtype==='trial') mem.mtype='normal'; }
