@@ -410,6 +410,7 @@ function vBlockAdd(){
 function vClassEdit(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const series=!!c.seriesId;
   return hdr('수업 수정','#/class/'+id)+`<div class="content"><div class="card"><b>${esc(c.name)}</b><div class="note" style="margin:0">${dateLabel(c.date)} ${c.time}</div></div>
   <form id="fedit" data-id="${id}">
+  <div class="field"><label>수업명</label><input class="input" name="cname" value="${esc(c.name)}"><div class="hint">이름이 같은 수업은 '메모 모아보기'에서 한 흐름으로 이어집니다</div></div>
   <div class="row"><div class="field"><label>시간</label><input class="input" name="time" value="${c.time}"></div><div class="field"><label>정원</label><input class="input" name="capacity" type="number" inputmode="numeric" min="1" value="${c.capacity}"></div></div>
   <div class="field"><label>장소</label><input class="input" name="place" value="${esc(c.place||'')}"></div>
   ${series?`<div class="field"><label>적용 범위 (반복 수업)</label><div class="seg" id="escope" data-v="after"><a data-v="one">이 회차만</a><a class="on" data-v="after">이후 회차부터</a><a data-v="all">전체</a></div></div>`:''}
@@ -467,7 +468,7 @@ function vClassAdd(){
   <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
   <div class="section-title">예약 불가</div>
   <a class="btn ghost" href="#/blockAdd">설정 (휴가, 개인 일정 등)</a></div>`+tabbar('classAdd'); }
-function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=occRes(id); const hasBooked=rs.some(r=>r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><a href="#/classEdit/${id}" style="float:right;font-size:11px;color:#888;text-decoration:underline">수정</a><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span>${c.seriesId?' <span class="tag">🔁 매주 반복</span>':''}<h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}${(()=>{const lp=c.passId?DB.passes.find(p=>p.id===c.passId):null;return lp?'<br>수강권: '+esc(lp.name):'';})()}</div></div><div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?'<div class="hint" style="margin:-4px 0 6px">오른쪽 상태(▾)를 탭하면 출석 결과를 입력·수정할 수 있습니다</div>':''}${rs.length?rs.map((r,i)=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=classPass(r.memberId,c);const pp=up?null:classPendingPass(r.memberId,c);const upay=(!up&&!pp)?DB.payments.find(x=>x.memberId===r.memberId&&x.status==='unpaid'):null;const done=r.status==='done';
+function vClassDetail(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=occRes(id); const hasBooked=rs.some(r=>r.status==='booked'); return hdr('수업 상세','#/timetable')+`<div class="content"><div class="card"><a href="#/classEdit/${id}" style="float:right;font-size:11px;color:#888;text-decoration:underline">수정</a><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span>${c.seriesId?' <span class="tag">🔁 매주 반복</span>':''}<h3 style="font-size:16px;margin:6px 0 2px">${esc(c.name)}</h3><div class="note" style="margin:0">${md(c.date)} ${c.time} · ${esc(c.place||'')}${(()=>{const lp=c.passId?DB.passes.find(p=>p.id===c.passId):null;return lp?'<br>수강권: '+esc(lp.name):'';})()}</div></div>${c.seriesId?(()=>{const sl=DB.classes.filter(x=>x.seriesId===c.seriesId).sort((a,b)=>a.date<b.date?-1:1);const last=sl[sl.length-1];const remain=sl.filter(x=>x.date>=todayStr).length;const wdn=[...new Set(sl.map(x=>WD[dow(x.date)]))].join('·');return `<div class="card" style="padding:10px"><div class="note" style="margin:0">🔁 매주 ${wdn} · 마지막 회차 ${md(last.date)} · 남은 ${remain}회</div><div class="row" style="margin-top:8px"><a class="btn ghost" data-extend="${id}" data-wk="4" style="margin:0">+4주 연장</a><a class="btn ghost" data-extend="${id}" data-wk="8" style="margin:0">+8주 연장</a><a class="btn ghost" data-extend="${id}" data-wk="12" style="margin:0">+12주 연장</a></div><div class="hint" style="margin:6px 0 0">마지막 회차 뒤로 같은 요일·시간의 회차가 추가됩니다. 연장 회차에는 예약이 자동 생성되지 않으니, 고정 수강 회원은 '회원 수업 예약 → 이후 회차 반복'으로 다시 추가하세요.</div></div>`;})():''}<div class="section-title">예약자 ${rs.length}/${c.capacity}</div>${rs.length?'<div class="hint" style="margin:-4px 0 6px">오른쪽 상태(▾)를 탭하면 출석 결과를 입력·수정할 수 있습니다</div>':''}${rs.length?rs.map((r,i)=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const up=classPass(r.memberId,c);const pp=up?null:classPendingPass(r.memberId,c);const upay=(!up&&!pp)?DB.payments.find(x=>x.memberId===r.memberId&&x.status==='unpaid'):null;const done=r.status==='done';
 const att=DB.attendance.find(a=>a.classId===id&&a.memberId===r.memberId);
 const key=att?(att.trial?'trial':(att.result==='present'&&(att.dneed||1)>=2)?'present2':att.result):null;
 const rtag=att?(att.trial?'무료 체험':att.result==='present'?'출석 완료':att.result==='noshow'?'노쇼':'결석'):(done?'출석 완료':'미처리');
@@ -489,11 +490,13 @@ ${(()=>{ const avail=DB.members.filter(m=>!rs.find(r=>r.memberId===m.id)&&canUse
 <div style="border-top:2px solid #d3dbe9;margin:24px 0 0"></div>
 <div class="section-title">폐강 처리</div>${c.seriesId?`<a class="btn ghost" data-del="${id}" data-scope="one">이 회차만 폐강</a><a class="btn ghost" data-del="${id}" data-scope="after">이후 회차부터 폐강</a><a class="btn ghost" data-del="${id}" data-scope="all">전체 폐강</a>`:`<a class="btn ghost" data-del="${id}" data-scope="one">삭제</a>`}</div>`+tabbar('timetable'); }
 function vClassNotes(cid){ const c=DB.classes.find(x=>x.id===cid); if(!c) return vTimetable();
-  // "이 수업의 흐름" 기준: 반복/단건 구분 없이 수업 이름 + 연결 수강권이 같으면 한 커리큘럼으로 묶음
-  const list=DB.classes.filter(x=>x.name===c.name&&(x.passId||null)===(c.passId||null)).filter(x=>x.topic||x.seq).sort((a,b)=>a.date<b.date?1:-1);
+  // "이 수업의 흐름" 기준: 반복/단건·수강권 구분 없이 수업 이름이 같으면 한 커리큘럼으로 묶음 (기수 갱신으로 수강권이 바뀌어도 메모가 이어짐)
+  const list=DB.classes.filter(x=>x.name===c.name).filter(x=>x.topic||x.seq).sort((a,b)=>a.date<b.date?1:-1);
+  const multiPass=new Set(list.map(x=>x.passId||'')).size>1;
+  const plabel=x=>{const p=DB.passes.find(q=>q.id===x.passId);return p?p.name:'이전 수강권';};
   return hdr('수업 메모 모아보기','#/class/'+cid)+`<div class="content">
   <div class="card"><span class="tag ${c.category==='group'?'dark':''}">${c.category==='group'?'그룹':'개인'}</span> <b>${esc(c.name)}</b><div class="note" style="margin:4px 0 0">메모 누적: ${list.length}개, 항목을 탭하면 그 회차로 이동</div></div>
-  ${list.length?list.map((x,i)=>`<a class="list-item" href="#/class/${x.id}" style="align-items:flex-start"><span class="grow"><span class="num">${i+1}</span><b>${dateLabel(x.date)} ${x.time||''}</b>${x.topic?`<br><span style="font-weight:700;color:var(--pt-blue)">${esc(x.topic)}</span>`:''}${x.seq?`<br><span class="sub" style="white-space:pre-line">${esc(x.seq)}</span>`:''}</span><span class="arrow">›</span></a>`).join(''):'<div class="empty">아직 작성된 메모가 없습니다.<br>수업 상세의 📝 수업 메모에서 주제·시퀀스를 기록해 보세요.</div>'}
+  ${list.length?list.map((x,i)=>`<a class="list-item" href="#/class/${x.id}" style="align-items:flex-start"><span class="grow"><span class="num">${i+1}</span><b>${dateLabel(x.date)} ${x.time||''}</b>${multiPass?` <span class="sub" style="color:#9AA3B2">· ${esc(plabel(x))}</span>`:''}${x.topic?`<br><span style="font-weight:700;color:var(--pt-blue)">${esc(x.topic)}</span>`:''}${x.seq?`<br><span class="sub" style="white-space:pre-line">${esc(x.seq)}</span>`:''}</span><span class="arrow">›</span></a>`).join(''):'<div class="empty">아직 작성된 메모가 없습니다.<br>수업 상세의 📝 수업 메모에서 주제·시퀀스를 기록해 보세요.</div>'}
   </div>`+tabbar('timetable'); }
 function vAttend(id){ const c=DB.classes.find(x=>x.id===id); if(!c) return vTimetable(); const rs=occRes(id); return hdr('출석 체크','#/class/'+id)+`<div class="content"><div class="card"><b>${esc(c.name)}</b><div class="note" style="margin:0">${md(c.date)} ${c.time}</div></div><div class="hint" style="margin:0 0 8px">이미 저장한 결과를 바꿔 저장하면 그 회원만 수정되고, 차감도 자동으로 정산됩니다.</div><form id="fatt" data-class="${id}">${rs.map(r=>{const m=DB.members.find(x=>x.id===r.memberId)||{};const prev=DB.attendance.find(a=>a.classId===id&&a.memberId===r.memberId);const sel=prev?prev.result:'present';const tr=prev?!!prev.trial:false;const up=classPass(r.memberId,c);const pp=up?null:classPendingPass(r.memberId,c);const upay=(!up&&!pp)?DB.payments.find(x=>x.memberId===r.memberId&&x.status==='unpaid'):null;return `<div class="card" data-mid="${r.memberId}"><b>${esc(m.name)}</b> ${up?'<span class="sub">'+esc(up.name)+' 잔여 '+up.remaining+'회</span>':pp?'<span class="sub">'+esc(pp.name)+' 시작 전 — 출석하면 시작·차감</span>':upay?'<span class="sub">'+esc(upay.passName)+' 미납 — 결제 시 소급 차감</span>':'<span class="tag">결제 전</span>'}<div style="margin-top:6px"><span class="chip att ${sel==='present'?'on':''}" data-r="present">출석</span><span class="chip att ${sel==='absent'?'on':''}" data-r="absent">결석</span><span class="chip att ${sel==='noshow'?'on':''}" data-r="noshow">노쇼</span> <span class="chip trial ${tr?'on':''}" data-t="${tr?'1':'0'}">${tr?'무료 체험 (차감 없음)':'무료 체험'}</span></div></div>`;}).join('')}<button class="btn" type="submit">저장 (출석 시 자동 차감)</button></form></div>`+tabbar('timetable'); }
 function vPayment(mid){ const m=DB.members.find(x=>x.id===mid); if(!m) return vMembers(); if(!DB.passes.length) return hdr('결제','#/member/'+mid)+`<div class="content"><div class="empty">먼저 수강권을 등록하세요<br><a class="btn" href="#/passAdd" style="margin-top:10px">수강권 만들기</a></div></div>`+tabbar('members'); return hdr('결제 사항 등록','#/member/'+mid)+`<div class="content"><div class="card"><b>${esc(m.name)}</b></div><form id="fpay" data-mid="${mid}"><div class="field"><label>수강권 <span class="req">*</span></label><select class="input" name="passId" required>${DB.passes.map(p=>`<option value="${p.id}">${esc(p.name)} — ${won(p.price)}원</option>`).join('')}</select></div><div class="field"><label>결제 수단</label><div class="seg" id="method" data-v="현금"><a class="on" data-v="현금">현금</a><a data-v="계좌이체">계좌이체</a><a data-v="카드">카드</a><a data-v="미납">미납</a></div></div><div class="field"><label id="payDateLb">납부일</label><input class="input" name="paidDate" id="payDate" type="date" value="${todayStr}"><div class="hint" id="payDateHint">실제로 돈을 받은 날짜 — '수강료' 탭의 최근 납부에 이 날짜로 표시됩니다</div></div><div class="field"><label>개시 방식 <span style="font-weight:400;color:#888;font-size:11px">— 유효기간을 언제부터 셀까</span></label><div class="seg" id="start" data-v="first"><a class="on" data-v="first">첫 출석 시</a><a data-v="date">시작일 지정</a></div><div class="hint">· <b>첫 출석 시</b>(권장): 결제해도 기간이 안 흐르고, 처음 출석한 날부터 유효기간 시작 — 미리 결제한 회원이 손해 안 봄<br>· <b>시작일 지정</b>: 지정한 날짜부터 유효기간 시작 — 시작 날짜를 정해두고 다니는 회원 (납부일과 별개)</div></div><div class="field" id="startDateF" style="display:none"><label>시작일</label><input class="input" name="startDate" type="date" value="${todayStr}"></div><button class="btn" type="submit">결제 등록</button></form></div>`+tabbar('members'); }
@@ -656,6 +659,7 @@ function wire(){
   const fjoin=document.getElementById('fjoin'); if(fjoin) fjoin.onsubmit=e=>{e.preventDefault();doJoin(fjoin);};
   document.querySelectorAll('[data-book]').forEach(b=>b.onclick=()=>doBook(b.dataset.book));
   document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>doClose(b.dataset.del,b.dataset.scope||'one'));
+  document.querySelectorAll('[data-extend]').forEach(b=>b.onclick=()=>doExtendSeries(b.dataset.extend,+b.dataset.wk));
   document.querySelectorAll('[data-delpay]').forEach(b=>b.onclick=()=>doDelPay(b.dataset.delpay));
   document.querySelectorAll('[data-delpass]').forEach(b=>b.onclick=()=>doDelPass(b.dataset.delpass));
   document.querySelectorAll('[data-delatt]').forEach(b=>b.onclick=()=>doDelAtt(b.dataset.delatt));
@@ -797,6 +801,8 @@ async function doClassAdd(f){
   const p=DB.passes.find(x=>x.id===passId); if(!p){ toast('강의(수강권)를 선택하세요',1); return; }
   const category=p.category, linkPass=p.id, name=(d.cname||'').trim()||p.name;
   const cap=category==='personal'?1:+d.capacity;
+  const dups=DB.classes.filter(x=>x.name===name).sort((a,b)=>a.date<b.date?-1:1);
+  if(dups.length&&!confirm(`'${name}' 이름의 수업이 이미 있습니다 (마지막 회차 ${md(dups[dups.length-1].date)}).\n이름이 같은 수업은 '메모 모아보기'가 한 흐름으로 이어집니다.\n같은 수업을 이어가는 게 맞으면 [확인], 별개 수업이라면 [취소] 후 이름을 바꿔주세요.`)) return;
   const repMode=(document.getElementById('rep')||{}).dataset?document.getElementById('rep').dataset.v:'none';
   if(repMode!=='weekly'){
     DB.classes.push({id:uid(),seriesId:null,category,name,date:d.date,time:d.time,capacity:cap,place:d.place,passId:linkPass});
@@ -817,6 +823,19 @@ async function doClassAdd(f){
   occ.forEach(dt=>DB.classes.push({id:uid(),seriesId,category,name,date:dt,time:d.time,capacity:cap,place:d.place,passId:linkPass}));
   await saveDB(); toast(`반복 수업 ${occ.length}회 생성 (${md(occ[0])}~${md(occ[occ.length-1])})`); go('#/timetable');
 }
+async function doExtendSeries(cid,wk){
+  const c=DB.classes.find(x=>x.id===cid); if(!c||!c.seriesId) return;
+  wk=Math.max(1,wk||4);
+  const sl=DB.classes.filter(x=>x.seriesId===c.seriesId).sort((a,b)=>a.date<b.date?-1:1);
+  const last=sl[sl.length-1];
+  const wds=[...new Set(sl.map(x=>dow(x.date)))];
+  const end=addDays(last.date,wk*7); let cur=addDays(last.date,1); const occ=[];
+  while(cur<=end){ if(wds.includes(dow(cur))&&!inBlock(cur)) occ.push(cur); cur=addDays(cur,1); }
+  if(!occ.length){ toast('연장할 회차가 없습니다 (예약 불가 기간을 확인하세요)',1); return; }
+  if(!confirm(`'${last.name}' 반복 수업을 ${wk}주 연장할까요?\n${md(occ[0])} ~ ${md(occ[occ.length-1])} · ${occ.length}회 추가됩니다.`)) return;
+  occ.forEach(dt=>DB.classes.push({id:uid(),seriesId:c.seriesId,category:last.category,name:last.name,date:dt,time:last.time,capacity:last.capacity,place:last.place,passId:last.passId}));
+  await saveDB(); toast(`반복 수업 ${occ.length}회 연장 (~${md(occ[occ.length-1])})`); render();
+}
 async function doBlockAdd(f){
   const d=Object.fromEntries(new FormData(f)); if(d.end<d.start){ toast('종료일이 시작일보다 빠릅니다',1); return; }
   const id=uid(); DB.blocks=DB.blocks||[]; DB.blocks.push({id,start:d.start,end:d.end,reason:d.reason||''});
@@ -835,7 +854,10 @@ async function doClassEdit(f){
   let targets=[c];
   if(c.seriesId&&scope==='all') targets=DB.classes.filter(x=>x.seriesId===c.seriesId);
   else if(c.seriesId&&scope==='after') targets=DB.classes.filter(x=>x.seriesId===c.seriesId&&x.date>=c.date);
-  targets.forEach(t=>{ t.time=d.time; t.capacity=+d.capacity; t.place=d.place; });
+  const nm=(d.cname||'').trim();
+  if(nm&&nm!==c.name){ const other=DB.classes.find(x=>x.name===nm&&!targets.includes(x));
+    if(other&&!confirm(`'${nm}' 이름의 수업이 이미 있습니다.\n이름이 같은 수업은 '메모 모아보기'가 한 흐름으로 이어집니다.\n같은 수업으로 잇는 게 맞으면 [확인]을 눌러주세요.`)) return; }
+  targets.forEach(t=>{ if(nm) t.name=nm; t.time=d.time; t.capacity=+d.capacity; t.place=d.place; });
   await saveDB(); toast(`${targets.length}개 수업 수정 완료`); go('#/class/'+id);
 }
 async function doJoin(f){ const mid=f.dataset.mid; const d=Object.fromEntries(new FormData(f));
